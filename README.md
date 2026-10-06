@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Project Purpose & Overview
+# 1. Project Purpose & Overview
 
 This project implements a private network service platform across four physical macOS workstations connected to the same local network.
 
@@ -18,10 +18,11 @@ The project demonstrates the complete lifecycle of a client request:
 3. The client establishes an HTTPS connection to Mac 2.
 4. Mac 2 terminates TLS and acts as the reverse proxy and load balancer.
 5. nginx forwards requests to Backend A or Backend B.
-6. The backend returns HTTP responses containing backend identity and caching headers.
-7. The team verifies DNS, TCP, TLS, HTTP, caching, load balancing, and packet-level behavior using tools such as `curl`, `dig`, `openssl`, and Wireshark.
+6. The selected backend returns an HTTP response containing backend identification and caching headers.
+7. The project can be observed across DNS, TCP, TLS and HTTP layers.
+8. Wireshark evidence is treated as a project-level packet-analysis activity and is not attributed to Mac 2 unless the capture was actually performed there.
 
-The project uses the reserved `.test` namespace and does not depend on a public DNS provider.
+The project uses the reserved `.test` namespace.
 
 ---
 
@@ -34,61 +35,95 @@ The project uses the reserved `.test` namespace and does not depend on a public 
 | **Mac 3** | **Rachit Gupta** | Backend Application Server A | Python HTTP service | `3001` |
 | **Mac 4** | **Saumya Mishra** | Backend Application Server B + Client | Python HTTP service | `3002` |
 
-### Role Summary
+## 2.1 Machine Responsibilities
 
-### Mac 1 — Private DNS
+### Mac 1 — Private DNS Server
 
-Mac 1 provides the private DNS service for the project.
+```text
+Hostname:
+cn-dns
+
+IP:
+10.7.9.245
+
+DNS:
+10.7.9.245:53
+
+Service:
+dnsmasq
+```
+
+Private records:
 
 ```text
 app.cn-capstone.test  →  10.7.5.53
 api.cn-capstone.test  →  10.7.5.53
 ```
 
-Main responsibility:
+Mac 1 also acts as one of the client-side environments used for project verification and packet evidence.
 
-- Private DNS resolution
-- `dnsmasq`
-- Client-side testing
-- DNS packet evidence
+---
 
-### Mac 2 — Edge Server
+### Mac 2 — Edge / Reverse Proxy / Load Balancer
 
-Mac 2 is the single HTTPS entry point for the project.
+```text
+Hostname:
+cn-edge
 
-Main responsibilities:
+IP:
+10.7.5.53
 
-- HTTPS termination
-- TLS certificate handling
-- Reverse proxying
+HTTPS:
+10.7.5.53:8443
+
+Service:
+nginx
+```
+
+Responsibilities:
+
+- TLS termination
+- HTTPS entry point
+- Reverse proxy
 - Round-robin load balancing
-- Forwarding requests to Backend A and Backend B
+- Forwarding requests to Backend A
+- Forwarding requests to Backend B
+
+Mac 2 does **not** serve as the Wireshark evidence owner in this documentation.
+
+---
 
 ### Mac 3 — Backend A
 
-Backend A provides the first application service:
-
 ```text
-10.7.22.10:3001
-```
+IP:
+10.7.22.10
 
-Backend identity:
+Port:
+3001
 
-```text
+Service:
+Python HTTP server
+
+Identity:
 X-Backend: A
 ```
 
+---
+
 ### Mac 4 — Backend B
 
-Backend B provides the second application service:
-
 ```text
-10.7.7.25:3002
-```
+IP:
+10.7.7.25
 
-Backend identity:
+Port:
+3002
 
-```text
+Service:
+Python HTTP server
+
+Identity:
 X-Backend: B
 ```
 
@@ -96,16 +131,14 @@ X-Backend: B
 
 # 3. Final Network Inventory
 
-The final documented Phase 1 topology uses the following addressing scheme.
-
 | Machine | Hostname | IPv4 Address | Subnet Mask | CIDR | Gateway | Interface | Main Service |
-|---|---|---:|---|---|---:|---|---|
+|---|---|---|---|---|---|---|---|
 | **Mac 1** | `cn-dns` | `10.7.9.245` | `255.255.224.0` | `/19` | `10.7.0.1` | `en0` | DNS `:53` |
 | **Mac 2** | `cn-edge` | `10.7.5.53` | `255.255.224.0` | `/19` | `10.7.0.1` | `en0` | nginx HTTPS `:8443` |
 | **Mac 3** | `Rachits-MacBook-Pro-4.local` | `10.7.22.10` | `255.255.224.0` | `/19` | `10.7.0.1` | `en0` | Backend A `:3001` |
 | **Mac 4** | `Saumyas-MacBook-Pro-3.local` | `10.7.7.25` | `255.255.224.0` | `/19` | `10.7.0.1` | `en0` | Backend B `:3002` |
 
-### Subnet
+## 3.1 Network Parameters
 
 ```text
 Network:
@@ -116,9 +149,12 @@ Subnet Mask:
 
 Default Gateway:
 10.7.0.1
+
+Interface:
+en0
 ```
 
-### Private Namespace
+## 3.2 Private Namespace
 
 ```text
 Primary application:
@@ -127,159 +163,289 @@ app.cn-capstone.test
 API:
 api.cn-capstone.test
 
-Reserved TLD:
+Reserved namespace:
 .test
 ```
 
 ---
 
-# 4. End-to-End Network Topology
+# 4. Final Architecture
 
-## 4.1 Mermaid Topology Diagram
+## 4.1 Main Architecture Diagram
+
+This version intentionally keeps the connection lines free of text labels.  
+The protocol steps are described in the legend below the diagram so that no line passes through a node.
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 260,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px",
+    "lineColor": "#475569"
+  }
+}}%%
+
 flowchart TB
 
-    subgraph LAN["PRIVATE LAN — 10.7.0.0/19"]
-        direction TB
+    CLIENT["CLIENT<br/><br/><b>Mac 1 / Mac 4</b>"]
 
-        CLIENT["CLIENT<br/>Mac 1 / Mac 4"]
+    DNS["MAC 1 — PRIVATE DNS<br/><br/>
+    <b>cn-dns</b><br/>
+    10.7.9.245:53<br/><br/>
+    dnsmasq"]
 
-        DNS["MAC 1 — PRIVATE DNS<br/>Aditya Rana<br/><br/>dnsmasq<br/>10.7.9.245:53"]
+    EDGE["MAC 2 — EDGE SERVER<br/><br/>
+    <b>cn-edge</b><br/>
+    10.7.5.53:8443<br/><br/>
+    nginx<br/>
+    TLS Termination<br/>
+    Reverse Proxy<br/>
+    Load Balancer"]
 
-        EDGE["MAC 2 — EDGE SERVER<br/>Krishna<br/><br/>nginx HTTPS<br/>10.7.5.53:8443<br/><br/>TLS Termination<br/>Reverse Proxy<br/>Load Balancer"]
+    subgraph BACKENDS["BACKEND APPLICATION LAYER"]
+        direction LR
 
-        A["MAC 3 — BACKEND A<br/>Rachit Gupta<br/><br/>10.7.22.10:3001<br/><br/>X-Backend: A<br/>ETag: &quot;A-v1&quot;"]
+        A["MAC 3 — BACKEND A<br/><br/>
+        10.7.22.10:3001<br/><br/>
+        Python HTTP Service<br/>
+        <b>X-Backend: A</b>"]
 
-        B["MAC 4 — BACKEND B<br/>Saumya Mishra<br/><br/>10.7.7.25:3002<br/><br/>X-Backend: B<br/>ETag: &quot;B-v1&quot;"]
+        B["MAC 4 — BACKEND B<br/><br/>
+        10.7.7.25:3002<br/><br/>
+        Python HTTP Service<br/>
+        <b>X-Backend: B</b>"]
     end
 
-    CLIENT -->|"DNS Query<br/>UDP 53"| DNS
-    DNS -->|"DNS Response<br/>app.cn-capstone.test → 10.7.5.53"| CLIENT
+    CLIENT --> DNS
+    DNS --> CLIENT
 
-    CLIENT -->|"HTTPS<br/>TCP 8443"| EDGE
+    CLIENT --> EDGE
 
-    EDGE -->|"Round-robin request"| A
-    EDGE -->|"Round-robin request"| B
+    EDGE --> A
+    EDGE --> B
 
-    A -->|"HTTP response<br/>X-Backend: A"| EDGE
-    B -->|"HTTP response<br/>X-Backend: B"| EDGE
+    A --> EDGE
+    B --> EDGE
 
-    EDGE -->|"TLS-encrypted response"| CLIENT
+    EDGE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef edge fill:#FEF3C7,stroke:#D97706,stroke-width:8px,color:#0F172A;
+    classDef backendA fill:#EDE9FE,stroke:#7C3AED,stroke-width:7px,color:#0F172A;
+    classDef backendB fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
+
+    class CLIENT client;
+    class DNS dns;
+    class EDGE edge;
+    class A backendA;
+    class B backendB;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
+
+### Architecture Legend
+
+| Step | Flow |
+|---|---|
+| **1** | Client → Mac 1: DNS query for `app.cn-capstone.test` |
+| **2** | Mac 1 → Client: `10.7.5.53` returned |
+| **3** | Client → Mac 2: HTTPS / TLS on TCP `8443` |
+| **4A** | Mac 2 → Mac 3: HTTP request to Backend A |
+| **4B** | Mac 2 → Mac 4: HTTP request to Backend B |
+| **5A** | Mac 3 → Mac 2: `X-Backend: A` |
+| **5B** | Mac 4 → Mac 2: `X-Backend: B` |
+| **6** | Mac 2 → Client: encrypted HTTPS response |
 
 ---
 
 # 5. End-to-End Request Flow
 
-## 5.1 Mermaid Request Sequence
+## 5.1 Request Sequence Diagram
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "17px",
+    "actorBkg": "#E0F2FE",
+    "actorBorder": "#0284C7",
+    "actorTextColor": "#0F172A",
+    "actorLineColor": "#64748B",
+    "signalColor": "#334155",
+    "signalTextColor": "#0F172A",
+    "labelBoxBkgColor": "#F8FAFC",
+    "labelBoxBorderColor": "#CBD5E1",
+    "noteBkgColor": "#FEF3C7",
+    "noteBorderColor": "#D97706",
+    "activationBkgColor": "#E2E8F0",
+    "activationBorderColor": "#64748B"
+  },
+  "sequence": {
+    "actorMargin": 100,
+    "width": 280,
+    "height": 100,
+    "boxMargin": 35,
+    "messageMargin": 70,
+    "mirrorActors": false,
+    "diagramMarginX": 80,
+    "diagramMarginY": 50
+  }
+}}%%
+
 sequenceDiagram
     autonumber
 
-    participant C as Client
-    participant D as Mac 1<br/>DNS
-    participant E as Mac 2<br/>nginx
-    participant A as Mac 3<br/>Backend A
-    participant B as Mac 4<br/>Backend B
+    participant C as CLIENT
+    participant D as MAC 1 DNS
+    participant E as MAC 2 NGINX
+    participant A as MAC 3 BACKEND A
+    participant B as MAC 4 BACKEND B
 
-    C->>D: DNS Query<br/>app.cn-capstone.test
-    D-->>C: A = 10.7.5.53
-
-    C->>E: TCP SYN :8443
-    E-->>C: TCP SYN-ACK
-    C->>E: TCP ACK
-
-    C->>E: TLS ClientHello<br/>SNI=app.cn-capstone.test
-    E-->>C: TLS ServerHello + Certificate
-
-    C->>E: Encrypted HTTPS GET /api/status
-
-    alt Round-robin selects Backend A
-        E->>A: HTTP GET /api/status
-        A-->>E: 200 OK + X-Backend: A + ETag
-    else Round-robin selects Backend B
-        E->>B: HTTP GET /api/status
-        B-->>E: 200 OK + X-Backend: B + ETag
+    rect rgb(220,252,231)
+        C->>D: DNS Query
+        D-->>C: A = 10.7.5.53
     end
 
-    E-->>C: TLS-encrypted HTTP response
+    rect rgb(219,234,254)
+        C->>E: TCP SYN :8443
+        E-->>C: TCP SYN-ACK
+        C->>E: TCP ACK
+    end
+
+    rect rgb(254,243,199)
+        C->>E: TLS ClientHello
+        E-->>C: TLS ServerHello
+        E-->>C: Certificate
+        E-->>C: TLS Handshake Complete
+    end
+
+    rect rgb(243,232,255)
+        C->>E: Encrypted GET /api/status
+
+        alt Backend A selected
+            E->>A: HTTP GET /api/status
+            A-->>E: 200 OK + X-Backend: A
+        else Backend B selected
+            E->>B: HTTP GET /api/status
+            B-->>E: 200 OK + X-Backend: B
+        end
+    end
+
+    rect rgb(252,231,243)
+        E-->>C: TLS Encrypted Response
+    end
 ```
 
-## 5.2 Request Lifecycle
+---
 
-1. **DNS Lookup**
-   - The client asks Mac 1 for `app.cn-capstone.test`.
-   - DNS uses UDP port `53`.
+# 6. Service Architecture
 
-2. **DNS Response**
-   - Mac 1 returns the Mac 2 address:
-   - `app.cn-capstone.test → 10.7.5.53`
+## 6.1 DNS Service
 
-3. **TCP Connection**
-   - The client connects to:
-   - `10.7.5.53:8443`
-   - TCP establishes a `SYN → SYN-ACK → ACK` handshake.
+Mac 1 runs:
 
-4. **TLS Handshake**
-   - Mac 2 terminates TLS.
-   - The certificate identifies `app.cn-capstone.test`.
+```text
+dnsmasq
+```
 
-5. **Encrypted HTTPS Request**
-   - The client sends an encrypted request such as:
-   - `GET /api/status`
+DNS listens on:
 
-6. **Reverse Proxy**
-   - nginx decrypts the request.
-   - nginx selects a backend from its upstream pool.
+```text
+10.7.9.245:53
+```
 
-7. **Backend Processing**
-   - Backend A or Backend B processes the HTTP request.
-   - The response identifies the selected backend using `X-Backend`.
+Project records:
 
-8. **Client Response**
-   - nginx returns the response through the existing TLS connection.
+```conf
+address=/app.cn-capstone.test/10.7.5.53
+address=/api.cn-capstone.test/10.7.5.53
+```
 
 ---
 
-# 6. OSI / TCP-IP Mapping
+## 6.2 Backend A
 
-| OSI Layer | TCP/IP Layer | Protocol / Technology | Project Implementation | Verification |
-|---|---|---|---|---|
-| Layer 7 | Application | DNS | `dnsmasq` resolving `.test` domain | `dig`, `nslookup`, Wireshark |
-| Layer 7 | Application | HTTP/1.1 | `/`, `/api/status`, backend headers | `curl -i` |
-| Layer 6 | Application | TLS | TLS termination on Mac 2 | `curl -v`, `openssl`, Wireshark |
-| Layer 5 | Application | TLS session | Session negotiation and secure connection | TLS handshake evidence |
-| Layer 4 | Transport | TCP | Port `8443`, `3001`, `3002` | `lsof`, Wireshark |
-| Layer 4 | Transport | UDP | DNS on port `53` | Wireshark |
-| Layer 3 | Internet | IPv4 | `10.7.0.0/19` private network | `ifconfig`, `ping` |
-| Layer 2 | Link | Wi-Fi / Ethernet | LAN communication | `arp`, interface status |
-| Layer 1 | Physical | Wireless / physical medium | Physical network connectivity | Interface status |
+```text
+Machine:
+Mac 3
+
+IP:
+10.7.22.10
+
+Port:
+3001
+
+Binding:
+0.0.0.0:3001
+
+Backend Identity:
+A
+
+Header:
+X-Backend: A
+
+ETag:
+"A-v1"
+```
 
 ---
 
-# 7. Phase 1 Mandatory Tasks
+## 6.3 Backend B
 
-## Task A — Establish the Private LAN
+```text
+Machine:
+Mac 4
 
-### Objective
+IP:
+10.7.7.25
 
-Connect all four macOS machines to the project LAN and verify their addressing.
+Port:
+3002
 
-### Interface Check
+Binding:
+0.0.0.0:3002
+
+Backend Identity:
+B
+
+Header:
+X-Backend: B
+
+ETag:
+"B-v1"
+```
+
+---
+
+# 7. Task A — Private LAN
+
+## Objective
+
+Connect the four project machines to the same private network and verify their network configuration.
+
+## Interface Check
 
 ```bash
 ifconfig en0 | grep "inet "
 ```
 
-### Routing Check
+## Routing Check
 
 ```bash
 netstat -nr
 ```
 
-### Host Connectivity Tests
+## Connectivity Tests
 
 ```bash
 ping -c 3 10.7.9.245
@@ -288,19 +454,19 @@ ping -c 3 10.7.22.10
 ping -c 3 10.7.7.25
 ```
 
-### Success Criteria
+## Important Evidence Note
 
-The intended criterion is successful host-to-host communication across the project LAN.
+The final README should not claim that every pairwise ping produced `0%` packet loss unless the submitted screenshots actually show that result.
 
-The final README should not claim perfect `0%` packet loss unless the specific submitted evidence shows that result.
+The topology and addressing can be documented independently of individual ICMP results.
 
 ---
 
 # 8. Task B — Private DNS
 
-Mac 1 runs the project's private DNS service using `dnsmasq`.
+Mac 1 provides the project's private DNS service.
 
-## dnsmasq Configuration
+## 8.1 dnsmasq Configuration
 
 ```conf
 port=53
@@ -316,13 +482,13 @@ address=/app.cn-capstone.test/10.7.5.53
 address=/api.cn-capstone.test/10.7.5.53
 ```
 
-## DNS Verification
+## 8.2 DNS Test
 
 ```bash
 dig @10.7.9.245 app.cn-capstone.test
 ```
 
-Expected:
+Expected project result:
 
 ```text
 status: NOERROR
@@ -334,7 +500,7 @@ SERVER:
 10.7.9.245#53
 ```
 
-## Public DNS Comparison
+## 8.3 Public DNS Comparison
 
 ```bash
 dig @8.8.8.8 app.cn-capstone.test
@@ -346,13 +512,13 @@ The project evidence showed:
 status: NXDOMAIN
 ```
 
-This confirms that the project hostname is intentionally private to the project's DNS environment.
+This demonstrates that the `.test` hostname is private to the project's DNS environment.
 
 ---
 
 # 9. Task C — Backend Services
 
-## Backend A — Mac 3
+## 9.1 Backend A — Mac 3
 
 ### Address
 
@@ -360,7 +526,7 @@ This confirms that the project hostname is intentionally private to the project'
 10.7.22.10:3001
 ```
 
-### Check Listening Socket
+### Check Listening Port
 
 ```bash
 lsof -nP -iTCP:3001 -sTCP:LISTEN
@@ -381,9 +547,7 @@ Cache-Control: max-age=60
 ETag: "A-v1"
 ```
 
-### Edge Test
-
-From Mac 2:
+### Test from Mac 2
 
 ```bash
 curl -i http://10.7.22.10:3001/api/status
@@ -391,7 +555,7 @@ curl -i http://10.7.22.10:3001/api/status
 
 ---
 
-## Backend B — Mac 4
+## 9.2 Backend B — Mac 4
 
 ### Address
 
@@ -399,7 +563,7 @@ curl -i http://10.7.22.10:3001/api/status
 10.7.7.25:3002
 ```
 
-### Check Listening Socket
+### Check Listening Port
 
 ```bash
 lsof -nP -iTCP:3002 -sTCP:LISTEN
@@ -420,9 +584,7 @@ Cache-Control: max-age=60
 ETag: "B-v1"
 ```
 
-### Edge Test
-
-From Mac 2:
+### Test from Mac 2
 
 ```bash
 curl -i http://10.7.7.25:3002/api/status
@@ -430,27 +592,11 @@ curl -i http://10.7.7.25:3002/api/status
 
 ---
 
-# 10. Task D — Edge Reverse Proxy and Load Balancer
+# 10. Task D — nginx Reverse Proxy and Load Balancer
 
-Mac 2 is the single application entry point.
+Mac 2 is the unified HTTPS entry point.
 
-Public endpoint:
-
-```text
-https://app.cn-capstone.test:8443
-```
-
-Backend pool:
-
-```text
-Backend A:
-10.7.22.10:3001
-
-Backend B:
-10.7.7.25:3002
-```
-
-## nginx Upstream
+## 10.1 nginx Upstream
 
 ```nginx
 upstream backend_pool {
@@ -459,7 +605,7 @@ upstream backend_pool {
 }
 ```
 
-## nginx HTTPS Server
+## 10.2 HTTPS Server
 
 ```nginx
 server {
@@ -471,6 +617,7 @@ server {
 
     location / {
         proxy_pass http://backend_pool;
+
         proxy_http_version 1.1;
 
         proxy_set_header Host $host;
@@ -483,7 +630,7 @@ server {
 }
 ```
 
-## nginx Validation
+## 10.3 nginx Validation
 
 ```bash
 nginx -t
@@ -496,9 +643,21 @@ syntax is ok
 test is successful
 ```
 
+## 10.4 Verify Port
+
+```bash
+sudo lsof -nP -iTCP:8443 -sTCP:LISTEN
+```
+
+Expected listener:
+
+```text
+*:8443
+```
+
 ---
 
-# 11. Load Balancing Verification
+# 11. Task D — Load Balancing Verification
 
 ## Six-Request Test
 
@@ -510,7 +669,7 @@ for i in {1..6}; do
 done
 ```
 
-Observed final evidence:
+Observed project evidence:
 
 ```text
 REQUEST 1
@@ -538,29 +697,90 @@ HTTP/1.1 200 OK
 X-Backend: B
 ```
 
+This confirms that both backend servers participate in the public request path.
+
 ---
 
-# 12. Mermaid Load Balancing Diagram
+# 12. Mermaid Load-Balancing Diagram
+
+The request labels are deliberately removed from the arrows and placed inside dedicated nodes. This prevents text from sitting on top of connection lines.
 
 ```mermaid
-flowchart LR
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 250,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
 
-    CLIENT["Client"]
+flowchart TB
 
-    EDGE["Mac 2<br/>nginx<br/>10.7.5.53:8443"]
+    CLIENT["CLIENT<br/><br/><b>HTTPS Request</b>"]
 
-    A["Mac 3<br/>Backend A<br/>10.7.22.10:3001<br/>X-Backend: A"]
+    EDGE["MAC 2 — NGINX<br/><br/>
+    10.7.5.53:8443<br/><br/>
+    <b>Round-Robin Load Balancer</b>"]
 
-    B["Mac 4<br/>Backend B<br/>10.7.7.25:3002<br/>X-Backend: B"]
+    subgraph REQUESTS["REQUEST DISTRIBUTION"]
+        direction LR
+
+        R1["REQUEST 1<br/>→ Backend A"]
+        R2["REQUEST 2<br/>→ Backend B"]
+        R3["REQUEST 3<br/>→ Backend A"]
+        R4["REQUEST 4<br/>→ Backend B"]
+    end
+
+    subgraph BACKEND_POOL["BACKEND POOL"]
+        direction LR
+
+        A["MAC 3 — BACKEND A<br/><br/>
+        10.7.22.10:3001<br/><br/>
+        X-Backend: A"]
+
+        B["MAC 4 — BACKEND B<br/><br/>
+        10.7.7.25:3002<br/><br/>
+        X-Backend: B"]
+    end
 
     CLIENT --> EDGE
 
-    EDGE -->|"Request 1"| A
-    EDGE -->|"Request 2"| B
-    EDGE -->|"Request 3"| A
-    EDGE -->|"Request 4"| B
-    EDGE -->|"Request 5"| A
-    EDGE -->|"Request 6"| B
+    EDGE --> R1
+    EDGE --> R2
+    EDGE --> R3
+    EDGE --> R4
+
+    R1 --> A
+    R3 --> A
+
+    R2 --> B
+    R4 --> B
+
+    A --> EDGE
+    B --> EDGE
+
+    EDGE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef edge fill:#FEF3C7,stroke:#D97706,stroke-width:8px,color:#0F172A;
+    classDef request fill:#F8FAFC,stroke:#64748B,stroke-width:5px,color:#0F172A;
+    classDef backendA fill:#EDE9FE,stroke:#7C3AED,stroke-width:7px,color:#0F172A;
+    classDef backendB fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
+
+    class CLIENT client;
+    class EDGE edge;
+    class R1,R2,R3,R4 request;
+    class A backendA;
+    class B backendB;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
 ---
@@ -569,22 +789,29 @@ flowchart LR
 
 Mac 2 performs TLS termination.
 
-## Public Endpoint
+## 13.1 Public Endpoint
 
 ```text
 https://app.cn-capstone.test:8443
 ```
 
-## Certificate Files
+## 13.2 Certificate
+
+Certificate:
 
 ```text
 /opt/homebrew/etc/nginx/certs/server.crt
+```
+
+Private key:
+
+```text
 /opt/homebrew/etc/nginx/certs/server.key
 ```
 
-## Strict HTTPS Test
+## 13.3 Strict HTTPS Verification
 
-The final test must not use `-k`.
+The final verification must not use `-k`.
 
 ```bash
 curl -v https://app.cn-capstone.test:8443/api/status
@@ -594,71 +821,155 @@ The verified project evidence showed:
 
 ```text
 Host app.cn-capstone.test:8443 was resolved
-IPv4: 10.7.5.53
-Connected to 10.7.5.53 port 8443
+
+IPv4:
+10.7.5.53
+
+Connected to:
+10.7.5.53 port 8443
+
+TLS:
 TLS 1.3
-Certificate subject CN: app.cn-capstone.test
-SAN matches app.cn-capstone.test
+
+Certificate:
+CN = app.cn-capstone.test
+
+SAN:
+app.cn-capstone.test
+
+Certificate verification:
 SSL certificate verify ok
+
+HTTP:
 HTTP/1.1 200 OK
+```
+
+Example response body:
+
+```json
+{
+  "backend": "B",
+  "status": "ok",
+  "service": "cn-project"
+}
 ```
 
 ---
 
 # 14. Mermaid TLS Diagram
 
+No protocol text is placed directly on the arrows.
+
 ```mermaid
-sequenceDiagram
-    autonumber
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 190,
+    "rankSpacing": 230,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
 
-    participant C as Client
-    participant E as Mac 2 nginx
-    participant B as Backend
+flowchart TB
 
-    C->>E: TCP SYN :8443
-    E-->>C: TCP SYN-ACK
-    C->>E: TCP ACK
+    CLIENT["CLIENT<br/><br/><b>HTTPS Request</b>"]
 
-    C->>E: TLS ClientHello<br/>SNI=app.cn-capstone.test
-    E-->>C: TLS ServerHello
-    E-->>C: Certificate
-    E-->>C: TLS handshake complete
+    TCP["TCP CONNECTION<br/><br/>
+    SYN<br/>
+    SYN-ACK<br/>
+    ACK"]
 
-    C->>E: Encrypted HTTPS GET /api/status
+    TLS["TLS HANDSHAKE<br/><br/>
+    ClientHello<br/>
+    ServerHello<br/>
+    Certificate<br/>
+    Finished"]
 
-    E->>B: HTTP GET /api/status
-    B-->>E: HTTP 200 + X-Backend
+    EDGE["MAC 2 — NGINX<br/><br/>
+    <b>TLS Termination</b><br/>
+    10.7.5.53:8443"]
 
-    E-->>C: Encrypted HTTPS Response
+    HTTP["DECRYPTED HTTP<br/><br/>
+    GET /api/status"]
+
+    BACKEND["BACKEND A / B<br/><br/>
+    10.7.22.10:3001<br/>
+    OR<br/>
+    10.7.7.25:3002"]
+
+    RESPONSE["RESPONSE<br/><br/>
+    HTTP 200 OK<br/>
+    X-Backend: A / B"]
+
+    CLIENT --> TCP
+    TCP --> TLS
+    TLS --> EDGE
+    EDGE --> HTTP
+    HTTP --> BACKEND
+    BACKEND --> RESPONSE
+    RESPONSE --> EDGE
+    EDGE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef tcp fill:#DBEAFE,stroke:#2563EB,stroke-width:7px,color:#0F172A;
+    classDef tls fill:#FEF3C7,stroke:#D97706,stroke-width:7px,color:#0F172A;
+    classDef edge fill:#FFEDD5,stroke:#EA580C,stroke-width:8px,color:#0F172A;
+    classDef http fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef backend fill:#EDE9FE,stroke:#7C3AED,stroke-width:7px,color:#0F172A;
+    classDef response fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
+
+    class CLIENT client;
+    class TCP tcp;
+    class TLS tls;
+    class EDGE edge;
+    class HTTP http;
+    class BACKEND backend;
+    class RESPONSE response;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
 ---
 
 # 15. Task F — HTTP Caching
 
-The application demonstrates HTTP caching through:
+The project demonstrates HTTP caching using `Cache-Control` and `ETag`.
+
+## 15.1 Cache-Control
 
 ```text
 Cache-Control: max-age=60
 ```
 
-and ETags:
+This indicates that the response can be treated as fresh for 60 seconds.
+
+## 15.2 ETag
+
+Backend A:
 
 ```text
-Backend A:
 ETag: "A-v1"
+```
 
 Backend B:
+
+```text
 ETag: "B-v1"
 ```
 
-## Initial Request
+## 15.3 Initial Request
 
 ```bash
 curl -i https://app.cn-capstone.test:8443/api/status
 ```
 
-Example response:
+Example:
 
 ```text
 HTTP/1.1 200 OK
@@ -667,7 +978,7 @@ ETag: "B-v1"
 X-Backend: B
 ```
 
-## Conditional Validation
+## 15.4 Conditional Validation
 
 ```bash
 curl -i \
@@ -675,120 +986,249 @@ curl -i \
   https://app.cn-capstone.test:8443/api/status
 ```
 
-When the representation remains unchanged, the backend can return:
+When the representation is unchanged, the backend can return:
 
 ```text
 HTTP/1.1 304 Not Modified
 ```
 
-The `304` response allows the client to reuse its cached representation instead of receiving the full response body again.
+This lets the client use its cached representation without retransmitting the entire response body.
 
 ---
 
 # 16. Mermaid Cache Validation Diagram
 
+All explanatory text is inside nodes rather than on connection lines.
+
 ```mermaid
-sequenceDiagram
-    autonumber
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 240,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
 
-    participant C as Client
-    participant E as Mac 2 nginx
-    participant B as Backend B
+flowchart TB
 
-    C->>E: GET /api/status
-    E->>B: GET /api/status
-    B-->>E: 200 OK<br/>ETag: "B-v1"
-    E-->>C: 200 OK<br/>Cache-Control: max-age=60<br/>ETag: "B-v1"
+    CLIENT["CLIENT"]
 
-    Note over C: Client stores cached response
+    REQUEST1["REQUEST 1<br/><br/>GET /api/status"]
 
-    C->>E: GET /api/status<br/>If-None-Match: "B-v1"
-    E->>B: Conditional request
-    B-->>E: 304 Not Modified
-    E-->>C: 304 Not Modified
+    RESPONSE200["RESPONSE<br/><br/>
+    HTTP 200 OK<br/>
+    Cache-Control: max-age=60<br/>
+    ETag: &quot;B-v1&quot;"]
+
+    CACHE["CLIENT CACHE<br/><br/>
+    Representation stored<br/>
+    Fresh for 60 seconds"]
+
+    REQUEST2["REQUEST 2<br/><br/>
+    If-None-Match: &quot;B-v1&quot;"]
+
+    SERVER["BACKEND<br/><br/>
+    Resource unchanged"]
+
+    RESPONSE304["RESPONSE<br/><br/>
+    HTTP 304 Not Modified<br/>
+    Full body not retransmitted"]
+
+    CLIENT --> REQUEST1
+    REQUEST1 --> RESPONSE200
+    RESPONSE200 --> CACHE
+    CACHE --> REQUEST2
+    REQUEST2 --> SERVER
+    SERVER --> RESPONSE304
+    RESPONSE304 --> CACHE
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef request fill:#DBEAFE,stroke:#2563EB,stroke-width:7px,color:#0F172A;
+    classDef response fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef cache fill:#FEF3C7,stroke:#D97706,stroke-width:8px,color:#0F172A;
+    classDef server fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
+
+    class CLIENT client;
+    class REQUEST1,REQUEST2 request;
+    class RESPONSE200,RESPONSE304 response;
+    class CACHE cache;
+    class SERVER server;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
 ---
 
 # 17. Task G — Wireshark Protocol Analysis
 
-## Evidence Ownership
+## 17.1 Evidence Ownership
 
-Wireshark is a **project-level protocol analysis task**.
+Wireshark is a project-level packet-analysis task.
 
-The submitted Wireshark evidence was captured from the client-side environment, including Mac 1.
+The available evidence was captured from the client-side environment, including Mac 1.
 
 Therefore:
 
-- Mac 1 documentation may include the captured Wireshark evidence.
+- Mac 1 documentation may include the Wireshark evidence.
 - Mac 2 documentation should not claim that Mac 2 itself captured the Wireshark screenshots unless that was actually done.
-- Mac 3 documentation should focus on Backend A evidence.
-- Mac 4 documentation should focus on Backend B evidence.
+- Mac 3 documentation focuses on Backend A.
+- Mac 4 documentation focuses on Backend B.
+- This section explains the complete project flow rather than assigning the packet capture to Mac 2.
 
-## Protocol Evidence
+---
 
-### DNS
+# 18. DNS Packet Flow
 
-```text
-Client
-   |
-   | UDP 53
-   v
-Mac 1 DNS
-   |
-   | app.cn-capstone.test → 10.7.5.53
-   v
-Client
+The arrows contain no labels so they cannot overlap the nodes.
+
+```mermaid
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 180,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
+
+flowchart LR
+
+    CLIENT["CLIENT"]
+
+    DNS["MAC 1 DNS<br/><br/>
+    10.7.9.245:53<br/><br/>
+    Private DNS"]
+
+    QUERY["DNS QUERY<br/><br/>
+    app.cn-capstone.test"]
+
+    RESPONSE["DNS RESPONSE<br/><br/>
+    A = 10.7.5.53"]
+
+    CLIENT --> QUERY
+    QUERY --> DNS
+    DNS --> RESPONSE
+    RESPONSE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef query fill:#DBEAFE,stroke:#2563EB,stroke-width:6px,color:#0F172A;
+    classDef response fill:#FEF3C7,stroke:#D97706,stroke-width:6px,color:#0F172A;
+
+    class CLIENT client;
+    class DNS dns;
+    class QUERY query;
+    class RESPONSE response;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
-### TCP
-
-```text
-Client → Mac 2
-SYN
-
-Mac 2 → Client
-SYN-ACK
-
-Client → Mac 2
-ACK
-```
-
-### TLS
-
-```text
-ClientHello
-    |
-ServerHello
-    |
-Certificate
-    |
-Handshake Complete
-    |
-Encrypted Application Data
-```
-
-### Useful Wireshark Filters
-
-DNS:
+Wireshark filter:
 
 ```text
 dns
 ```
 
-DNS UDP:
+---
 
-```text
-udp.port == 53
+# 19. TCP Three-Way Handshake
+
+```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "17px",
+    "actorBkg": "#E0F2FE",
+    "actorBorder": "#0284C7",
+    "actorTextColor": "#0F172A",
+    "actorLineColor": "#64748B",
+    "signalColor": "#334155",
+    "signalTextColor": "#0F172A"
+  },
+  "sequence": {
+    "actorMargin": 120,
+    "width": 300,
+    "height": 110,
+    "messageMargin": 80,
+    "boxMargin": 40,
+    "diagramMarginX": 100,
+    "diagramMarginY": 60
+  }
+}}%%
+
+sequenceDiagram
+    autonumber
+
+    participant C as CLIENT
+    participant E as MAC 2 NGINX
+
+    C->>E: SYN<br/>TCP 8443
+    E-->>C: SYN-ACK
+    C->>E: ACK
 ```
 
-HTTPS TCP:
+Wireshark filter:
 
 ```text
 tcp.port == 8443
 ```
 
-TLS:
+---
+
+# 20. TLS Handshake
+
+```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "17px",
+    "actorBkg": "#FEF3C7",
+    "actorBorder": "#D97706",
+    "actorTextColor": "#0F172A",
+    "actorLineColor": "#64748B",
+    "signalColor": "#334155",
+    "signalTextColor": "#0F172A"
+  },
+  "sequence": {
+    "actorMargin": 120,
+    "width": 300,
+    "height": 110,
+    "messageMargin": 80,
+    "boxMargin": 40,
+    "diagramMarginX": 100,
+    "diagramMarginY": 60
+  }
+}}%%
+
+sequenceDiagram
+    autonumber
+
+    participant C as CLIENT
+    participant E as MAC 2 NGINX
+
+    C->>E: ClientHello
+    E-->>C: ServerHello
+    E-->>C: Certificate
+    E-->>C: TLS Handshake Complete
+    C->>E: Encrypted Application Data
+```
+
+Wireshark filter:
 
 ```text
 tls
@@ -796,68 +1236,108 @@ tls
 
 ---
 
-# 18. Mermaid Packet Flow
+# 21. Complete Packet Flow
+
+Again, the connection lines have no text labels.
 
 ```mermaid
-flowchart TD
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 230,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
 
-    C["Client"]
+flowchart TB
 
-    D["Mac 1 DNS<br/>10.7.9.245:53"]
+    DNS["1 — DNS<br/><br/>
+    UDP 53<br/>
+    app.cn-capstone.test<br/>
+    → 10.7.5.53"]
 
-    E["Mac 2 nginx<br/>10.7.5.53:8443"]
+    TCP["2 — TCP<br/><br/>
+    Port 8443<br/>
+    SYN → SYN-ACK → ACK"]
 
-    A["Mac 3 Backend A<br/>10.7.22.10:3001"]
+    TLS["3 — TLS<br/><br/>
+    ClientHello<br/>
+    ServerHello<br/>
+    Certificate"]
 
-    B["Mac 4 Backend B<br/>10.7.7.25:3002"]
+    ENCRYPTED["4 — ENCRYPTED DATA<br/><br/>
+    HTTPS Application Data<br/>
+    Payload is encrypted"]
 
-    C -->|"DNS Query<br/>UDP 53"| D
-    D -->|"DNS Response<br/>10.7.5.53"| C
+    HTTP["5 — APPLICATION PATH<br/><br/>
+    nginx → Backend A / B<br/>
+    HTTP/1.1"]
 
-    C -->|"TCP SYN"| E
-    E -->|"TCP SYN-ACK"| C
-    C -->|"TCP ACK"| E
+    RESPONSE["6 — RESPONSE<br/><br/>
+    HTTP 200 OK<br/>
+    X-Backend: A / B"]
 
-    C -->|"TLS ClientHello"| E
-    E -->|"TLS ServerHello + Certificate"| C
+    DNS --> TCP
+    TCP --> TLS
+    TLS --> ENCRYPTED
+    ENCRYPTED --> HTTP
+    HTTP --> RESPONSE
 
-    C -->|"Encrypted HTTPS Data"| E
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef tcp fill:#DBEAFE,stroke:#2563EB,stroke-width:7px,color:#0F172A;
+    classDef tls fill:#FEF3C7,stroke:#D97706,stroke-width:7px,color:#0F172A;
+    classDef encrypted fill:#EDE9FE,stroke:#7C3AED,stroke-width:7px,color:#0F172A;
+    classDef http fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef response fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
 
-    E -->|"HTTP Request"| A
-    E -->|"HTTP Request"| B
+    class DNS dns;
+    class TCP tcp;
+    class TLS tls;
+    class ENCRYPTED encrypted;
+    class HTTP http;
+    class RESPONSE response;
 
-    A -->|"HTTP Response"| E
-    B -->|"HTTP Response"| E
-
-    E -->|"Encrypted HTTPS Response"| C
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
 ---
 
-# 19. Failure Demonstration
+# 22. Task Failure Demonstration
 
-The documented failure demonstration uses the backend-failure scenario.
+The documented failure demonstration focuses on Backend A.
 
-## Normal State
+## 22.1 Normal State
 
-Both backends are available:
+Both backend services are available:
 
 ```text
-Backend A
+Backend A:
 10.7.22.10:3001
 
-Backend B
+Backend B:
 10.7.7.25:3002
 ```
 
-Normal public requests show both:
+The public application can return:
 
 ```text
 X-Backend: A
+```
+
+and:
+
+```text
 X-Backend: B
 ```
 
-## Failure Action
+## 22.2 Failure Action
 
 Backend A is stopped on Mac 3:
 
@@ -865,92 +1345,117 @@ Backend A is stopped on Mac 3:
 10.7.22.10:3001
 ```
 
-The edge remains available and requests continue through Backend B.
+The nginx edge and DNS service remain available.
 
-Observed public behavior during the failure:
+## 22.3 During Failure
+
+Public requests continue through Backend B:
 
 ```text
 X-Backend: B
 ```
 
-## Recovery
+## 22.4 Recovery
 
 Backend A is started again.
 
-The application returns to normal operation and both backend identities become available again:
+The public application returns to the normal state where both backend identities are available:
 
 ```text
 X-Backend: A
 X-Backend: B
 ```
 
-## Failure Layer
-
-```text
-Affected:
-Backend / Application Layer
-
-Unaffected:
-DNS
-nginx Edge
-TLS Entry Point
-
-Affected Service:
-Backend A :3001
-```
-
 ---
 
-# 20. Mermaid Failure / Recovery Diagram
+# 23. Mermaid Failure / Recovery Diagram
 
 ```mermaid
-flowchart TD
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 250,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
 
-    START["NORMAL STATE"]
+flowchart TB
 
-    BOTH["Backend A<br/>10.7.22.10:3001<br/><br/>Backend B<br/>10.7.7.25:3002"]
+    NORMAL["NORMAL STATE<br/><br/>
+    Backend A UP<br/>
+    Backend B UP<br/><br/>
+    X-Backend: A / B"]
 
-    FAIL["BACKEND A STOPPED"]
+    STOP["FAILURE ACTION<br/><br/>
+    Stop Backend A<br/>
+    10.7.22.10:3001"]
 
-    ONLYB["Backend B continues serving<br/>10.7.7.25:3002"]
+    FAILURE["FAILURE STATE<br/><br/>
+    Backend A DOWN<br/>
+    Backend B UP<br/><br/>
+    Requests continue through B"]
 
-    RESTORE["BACKEND A RESTARTED"]
+    RESTORE["RECOVERY ACTION<br/><br/>
+    Restart Backend A"]
 
-    RECOVERED["SERVICE RESTORED<br/>Both A and B available"]
+    RECOVERED["RESTORED STATE<br/><br/>
+    Backend A UP<br/>
+    Backend B UP<br/><br/>
+    X-Backend: A / B"]
 
-    START --> BOTH
-    BOTH -->|"Stop Backend A"| FAIL
-    FAIL --> ONLYB
-    ONLYB -->|"Restart Backend A"| RESTORE
+    NORMAL --> STOP
+    STOP --> FAILURE
+    FAILURE --> RESTORE
     RESTORE --> RECOVERED
+
+    classDef normal fill:#DCFCE7,stroke:#16A34A,stroke-width:8px,color:#0F172A;
+    classDef stop fill:#FEE2E2,stroke:#DC2626,stroke-width:8px,color:#0F172A;
+    classDef failure fill:#FEF3C7,stroke:#D97706,stroke-width:8px,color:#0F172A;
+    classDef restore fill:#DBEAFE,stroke:#2563EB,stroke-width:7px,color:#0F172A;
+    classDef recovered fill:#DCFCE7,stroke:#16A34A,stroke-width:8px,color:#0F172A;
+
+    class NORMAL normal;
+    class STOP stop;
+    class FAILURE failure;
+    class RESTORE restore;
+    class RECOVERED recovered;
+
+    linkStyle default stroke:#475569,stroke-width:8px;
 ```
 
 ---
 
-# 21. Verification Commands by Machine
+# 24. Verification Commands by Machine
 
-## Mac 1 — DNS
+## 24.1 Mac 1 — DNS
 
-### Check IP
+### IP
 
 ```bash
 ipconfig getifaddr en0
 ```
 
-### Check dnsmasq
+### dnsmasq Listener
 
 ```bash
 sudo lsof -nP -iUDP:53
 sudo lsof -nP -iTCP:53
 ```
 
-### DNS Resolution
+### DNS Test
 
 ```bash
 dig @10.7.9.245 app.cn-capstone.test
 ```
 
-### Public DNS Comparison
+### Public DNS Test
 
 ```bash
 dig @8.8.8.8 app.cn-capstone.test
@@ -958,45 +1463,45 @@ dig @8.8.8.8 app.cn-capstone.test
 
 ---
 
-## Mac 2 — Edge
+## 24.2 Mac 2 — Edge
 
-### Check IP
+### IP
 
 ```bash
 ipconfig getifaddr en0
 ```
 
-### Validate nginx
+### nginx Test
 
 ```bash
 nginx -t
 ```
 
-### Check HTTPS Port
+### HTTPS Listener
 
 ```bash
 sudo lsof -nP -iTCP:8443 -sTCP:LISTEN
 ```
 
-### Test Backend A
+### Backend A
 
 ```bash
 curl -i http://10.7.22.10:3001/api/status
 ```
 
-### Test Backend B
+### Backend B
 
 ```bash
 curl -i http://10.7.7.25:3002/api/status
 ```
 
-### Test HTTPS
+### HTTPS
 
 ```bash
 curl -v https://app.cn-capstone.test:8443/api/status
 ```
 
-### Test Load Balancing
+### Load Balancing
 
 ```bash
 for i in {1..6}; do
@@ -1008,21 +1513,21 @@ done
 
 ---
 
-## Mac 3 — Backend A
+## 24.3 Mac 3 — Backend A
 
-### Check IP
+### IP
 
 ```bash
 ipconfig getifaddr en0
 ```
 
-### Check Backend A
+### Listener
 
 ```bash
 lsof -nP -iTCP:3001 -sTCP:LISTEN
 ```
 
-### Local Test
+### Local API
 
 ```bash
 curl -i http://127.0.0.1:3001/api/status
@@ -1030,21 +1535,21 @@ curl -i http://127.0.0.1:3001/api/status
 
 ---
 
-## Mac 4 — Backend B
+## 24.4 Mac 4 — Backend B
 
-### Check IP
+### IP
 
 ```bash
 ipconfig getifaddr en0
 ```
 
-### Check Backend B
+### Listener
 
 ```bash
 lsof -nP -iTCP:3002 -sTCP:LISTEN
 ```
 
-### Local Test
+### Local API
 
 ```bash
 curl -i http://127.0.0.1:3002/api/status
@@ -1052,7 +1557,7 @@ curl -i http://127.0.0.1:3002/api/status
 
 ---
 
-# 22. Evidence Allocation
+# 25. Evidence Allocation
 
 | Evidence / Task | Primary Machine / Source |
 |---|---|
@@ -1076,7 +1581,7 @@ curl -i http://127.0.0.1:3002/api/status
 
 ---
 
-# 23. Review 1 Marks Breakdown
+# 26. Review 1 Marks Breakdown
 
 | Review Area | Tasks | Marks |
 |---|---|---:|
@@ -1090,9 +1595,9 @@ curl -i http://127.0.0.1:3002/api/status
 
 ---
 
-# 24. Automated Testing
+# 27. Automated Testing
 
-Run the project-wide test harness:
+Run the complete project test suite:
 
 ```bash
 ./tests/run-all-tests.sh
@@ -1108,33 +1613,68 @@ Individual tests:
 ./tests/failure-tests.sh
 ```
 
-### Test Responsibilities
+## 27.1 Test Mapping Diagram
 
-```text
-dns-test.sh
-    ↓
-Task B — DNS verification
+```mermaid
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 250,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
 
-https-test.sh
-    ↓
-Task E — HTTPS / TLS verification
+flowchart TB
 
-load-balancing-test.sh
-    ↓
-Task D — nginx load balancing
+    RUN["run-all-tests.sh"]
 
-caching-test.sh
-    ↓
-Task F — Cache-Control / ETag / 304
+    subgraph TESTS["PHASE 1 TEST SUITE"]
+        direction LR
 
-failure-tests.sh
-    ↓
-Failure demonstration
+        DNS["dns-test.sh<br/><br/>Task B<br/>DNS Verification"]
+
+        HTTPS["https-test.sh<br/><br/>Task E<br/>HTTPS / TLS"]
+
+        LB["load-balancing-test.sh<br/><br/>Task D<br/>Load Balancing"]
+
+        CACHE["caching-test.sh<br/><br/>Task F<br/>Cache / 304"]
+
+        FAILURE["failure-tests.sh<br/><br/>Failure<br/>Demonstration"]
+    end
+
+    RUN --> DNS
+    RUN --> HTTPS
+    RUN --> LB
+    RUN --> CACHE
+    RUN --> FAILURE
+
+    classDef run fill:#FEF3C7,stroke:#D97706,stroke-width:8px,color:#0F172A;
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef https fill:#DBEAFE,stroke:#2563EB,stroke-width:7px,color:#0F172A;
+    classDef lb fill:#EDE9FE,stroke:#7C3AED,stroke-width:7px,color:#0F172A;
+    classDef cache fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
+    classDef failure fill:#FEE2E2,stroke:#DC2626,stroke-width:7px,color:#0F172A;
+
+    class RUN run;
+    class DNS dns;
+    class HTTPS https;
+    class LB lb;
+    class CACHE cache;
+    class FAILURE failure;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
 ---
 
-# 25. Recommended Repository Structure
+# 28. Recommended Repository Structure
 
 ```text
 cn-capstone/
@@ -1189,81 +1729,100 @@ cn-capstone/
 
 ---
 
-# 26. Final Architecture Diagram
+# 29. Final Architecture Summary
 
 ```mermaid
-flowchart LR
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 230,
+    "rankSpacing": 280,
+    "curve": "basis",
+    "padding": 50
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "19px"
+  }
+}}%%
 
-    CLIENT["CLIENT<br/>Mac 1 / Mac 4"]
+flowchart TB
 
-    DNS["MAC 1 — DNS<br/>10.7.9.245:53"]
+    CLIENT["CLIENT<br/><br/><b>Mac 1 / Mac 4</b>"]
 
-    EDGE["MAC 2 — nginx EDGE<br/>10.7.5.53:8443"]
+    DNS["MAC 1<br/><br/><b>PRIVATE DNS</b><br/><br/>
+    10.7.9.245:53<br/><br/>
+    dnsmasq"]
 
-    A["MAC 3 — BACKEND A<br/>10.7.22.10:3001"]
+    EDGE["MAC 2<br/><br/><b>NGINX EDGE</b><br/><br/>
+    10.7.5.53:8443<br/><br/>
+    TLS<br/>
+    Reverse Proxy<br/>
+    Load Balancer"]
 
-    B["MAC 4 — BACKEND B<br/>10.7.7.25:3002"]
+    subgraph BACKEND_LAYER["BACKEND APPLICATION LAYER"]
+        direction LR
 
-    CLIENT -->|"DNS Query"| DNS
-    DNS -->|"10.7.5.53"| CLIENT
+        A["MAC 3<br/><br/><b>BACKEND A</b><br/><br/>
+        10.7.22.10:3001<br/><br/>
+        X-Backend: A"]
 
-    CLIENT -->|"HTTPS"| EDGE
+        B["MAC 4<br/><br/><b>BACKEND B</b><br/><br/>
+        10.7.7.25:3002<br/><br/>
+        X-Backend: B"]
+    end
 
-    EDGE -->|"Round Robin"| A
-    EDGE -->|"Round Robin"| B
+    CLIENT --> DNS
+    DNS --> CLIENT
 
-    A -->|"HTTP Response"| EDGE
-    B -->|"HTTP Response"| EDGE
+    CLIENT --> EDGE
 
-    EDGE -->|"HTTPS Response"| CLIENT
+    EDGE --> A
+    EDGE --> B
+
+    A --> EDGE
+    B --> EDGE
+
+    EDGE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:8px,color:#0F172A;
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:8px,color:#0F172A;
+    classDef edge fill:#FEF3C7,stroke:#D97706,stroke-width:9px,color:#0F172A;
+    classDef backendA fill:#EDE9FE,stroke:#7C3AED,stroke-width:8px,color:#0F172A;
+    classDef backendB fill:#FCE7F3,stroke:#DB2777,stroke-width:8px,color:#0F172A;
+
+    class CLIENT client;
+    class DNS dns;
+    class EDGE edge;
+    class A backendA;
+    class B backendB;
+
+    linkStyle default stroke:#475569,stroke-width:8px;
 ```
 
----
-
-# 27. Final Project Summary
-
-The final Phase 1 architecture consists of four physical macOS machines.
+### Architecture Legend
 
 ```text
-Mac 1
-Private DNS
-10.7.9.245:53
-        |
-        | app.cn-capstone.test → 10.7.5.53
-        v
-Mac 2
-nginx Edge / TLS / Reverse Proxy / Load Balancer
-10.7.5.53:8443
-        |
-        +--------------------------+
-        |                          |
-        v                          v
-Mac 3                    Mac 4
-Backend A                Backend B
-10.7.22.10:3001          10.7.7.25:3002
-X-Backend: A             X-Backend: B
+1. Client queries Mac 1 DNS.
+
+2. Mac 1 returns:
+   app.cn-capstone.test → 10.7.5.53
+
+3. Client establishes HTTPS with Mac 2.
+
+4. Mac 2 terminates TLS.
+
+5. nginx selects Backend A or Backend B.
+
+6. Backend returns the response.
+
+7. nginx sends the HTTPS response to the client.
 ```
-
-The project demonstrates:
-
-- Private DNS using `dnsmasq`
-- Private `.test` namespace
-- IPv4 LAN communication
-- TCP connectivity
-- HTTPS and TLS termination
-- nginx reverse proxying
-- Round-robin load balancing
-- Backend identification with `X-Backend`
-- HTTP caching with `Cache-Control`
-- ETag validation
-- `304 Not Modified`
-- Backend failure and recovery
-- DNS, TCP and TLS packet analysis
-- End-to-end client request flow
 
 ---
 
-## Final Endpoint Summary
+# 30. Final Endpoint Summary
 
 | Component | Address |
 |---|---|
@@ -1277,32 +1836,260 @@ The project demonstrates:
 
 ---
 
-## Core Request Path
+# 31. Core Request Path
+
+This diagram also uses dedicated step nodes rather than putting long descriptions on arrows.
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 250,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
+
 flowchart TB
 
-    C["Client"]
+    CLIENT["CLIENT"]
 
-    D["Mac 1<br/>dnsmasq<br/>10.7.9.245:53"]
+    STEP1["STEP 1<br/><br/>DNS QUERY"]
 
-    E["Mac 2<br/>nginx / TLS / LB<br/>10.7.5.53:8443"]
+    DNS["MAC 1 DNS<br/><br/>10.7.9.245:53"]
 
-    A["Mac 3<br/>Backend A<br/>10.7.22.10:3001"]
+    STEP2["STEP 2<br/><br/>DNS RESPONSE<br/>10.7.5.53"]
 
-    B["Mac 4<br/>Backend B<br/>10.7.7.25:3002"]
+    STEP3["STEP 3<br/><br/>TCP + TLS"]
 
-    C -->|"1. DNS"| D
-    D -->|"2. 10.7.5.53"| C
-    C -->|"3. TCP + TLS"| E
+    EDGE["MAC 2 NGINX<br/><br/>10.7.5.53:8443"]
 
-    E -->|"4. Round Robin"| A
-    E -->|"4. Round Robin"| B
+    STEP4A["STEP 4A<br/><br/>BACKEND A"]
 
-    A -->|"5. X-Backend: A"| E
-    B -->|"5. X-Backend: B"| E
+    STEP4B["STEP 4B<br/><br/>BACKEND B"]
 
-    E -->|"6. HTTPS Response"| C
+    A["MAC 3<br/><br/>10.7.22.10:3001"]
+
+    B["MAC 4<br/><br/>10.7.7.25:3002"]
+
+    RESPONSE["FINAL RESPONSE<br/><br/>HTTP 200<br/>X-Backend: A / B"]
+
+    CLIENT --> STEP1
+    STEP1 --> DNS
+    DNS --> STEP2
+    STEP2 --> CLIENT
+    CLIENT --> STEP3
+    STEP3 --> EDGE
+
+    EDGE --> STEP4A
+    EDGE --> STEP4B
+
+    STEP4A --> A
+    STEP4B --> B
+
+    A --> RESPONSE
+    B --> RESPONSE
+
+    RESPONSE --> EDGE
+    EDGE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:8px,color:#0F172A;
+    classDef step fill:#F8FAFC,stroke:#64748B,stroke-width:6px,color:#0F172A;
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:8px,color:#0F172A;
+    classDef edge fill:#FEF3C7,stroke:#D97706,stroke-width:9px,color:#0F172A;
+    classDef backendA fill:#EDE9FE,stroke:#7C3AED,stroke-width:8px,color:#0F172A;
+    classDef backendB fill:#FCE7F3,stroke:#DB2777,stroke-width:8px,color:#0F172A;
+    classDef response fill:#DCFCE7,stroke:#16A34A,stroke-width:8px,color:#0F172A;
+
+    class CLIENT client;
+    class STEP1,STEP2,STEP3,STEP4A,STEP4B step;
+    class DNS dns;
+    class EDGE edge;
+    class A backendA;
+    class B backendB;
+    class RESPONSE response;
+
+    linkStyle default stroke:#475569,stroke-width:8px;
+```
+
+---
+
+# 32. Final Project Summary
+
+The final Phase 1 platform contains four physical macOS systems.
+
+```mermaid
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 230,
+    "rankSpacing": 280,
+    "curve": "basis",
+    "padding": 50
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "19px"
+  }
+}}%%
+
+flowchart TB
+
+    subgraph NETWORK["PRIVATE NETWORK — 10.7.0.0/19"]
+        direction TB
+
+        CLIENT["CLIENT<br/><br/>Mac 1 / Mac 4"]
+
+        DNS["MAC 1 — DNS<br/><br/>
+        10.7.9.245:53<br/><br/>
+        dnsmasq"]
+
+        EDGE["MAC 2 — EDGE<br/><br/>
+        10.7.5.53:8443<br/><br/>
+        nginx<br/>
+        TLS / Reverse Proxy / Load Balancer"]
+
+        subgraph BACKENDS["BACKEND LAYER"]
+            direction LR
+
+            A["MAC 3 — BACKEND A<br/><br/>
+            10.7.22.10:3001<br/><br/>
+            X-Backend: A"]
+
+            B["MAC 4 — BACKEND B<br/><br/>
+            10.7.7.25:3002<br/><br/>
+            X-Backend: B"]
+        end
+    end
+
+    CLIENT --> DNS
+    DNS --> CLIENT
+
+    CLIENT --> EDGE
+
+    EDGE --> A
+    EDGE --> B
+
+    A --> EDGE
+    B --> EDGE
+
+    EDGE --> CLIENT
+
+    classDef client fill:#E0F2FE,stroke:#0284C7,stroke-width:8px,color:#0F172A;
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:8px,color:#0F172A;
+    classDef edge fill:#FEF3C7,stroke:#D97706,stroke-width:9px,color:#0F172A;
+    classDef backendA fill:#EDE9FE,stroke:#7C3AED,stroke-width:8px,color:#0F172A;
+    classDef backendB fill:#FCE7F3,stroke:#DB2777,stroke-width:8px,color:#0F172A;
+
+    class CLIENT client;
+    class DNS dns;
+    class EDGE edge;
+    class A backendA;
+    class B backendB;
+
+    linkStyle default stroke:#475569,stroke-width:8px;
+```
+
+The project demonstrates:
+
+- Private DNS using `dnsmasq`
+- `.test` private namespace
+- LAN addressing
+- TCP connectivity
+- HTTPS
+- TLS termination
+- nginx reverse proxying
+- Round-robin load balancing
+- Backend identification through `X-Backend`
+- HTTP caching
+- `Cache-Control`
+- `ETag`
+- `304 Not Modified`
+- Backend failure and recovery
+- DNS packet analysis
+- TCP handshake analysis
+- TLS handshake analysis
+- Encrypted application data
+- End-to-end request flow
+
+---
+
+# 33. Final Project Components
+
+```mermaid
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 220,
+    "rankSpacing": 250,
+    "curve": "basis",
+    "padding": 45
+  },
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "18px"
+  }
+}}%%
+
+flowchart TB
+
+    DNS["PRIVATE DNS<br/><br/>
+    dnsmasq<br/>
+    10.7.9.245:53"]
+
+    EDGE["HTTPS EDGE<br/><br/>
+    nginx<br/>
+    10.7.5.53:8443"]
+
+    TLS["TLS<br/><br/>
+    Termination"]
+
+    LB["LOAD BALANCING<br/><br/>
+    Round Robin"]
+
+    A["BACKEND A<br/><br/>
+    10.7.22.10:3001"]
+
+    B["BACKEND B<br/><br/>
+    10.7.7.25:3002"]
+
+    CACHE["HTTP CACHE<br/><br/>
+    ETag<br/>
+    304"]
+
+    DNS --> EDGE
+    EDGE --> TLS
+    TLS --> LB
+    LB --> A
+    LB --> B
+    A --> CACHE
+    B --> CACHE
+
+    classDef dns fill:#DCFCE7,stroke:#16A34A,stroke-width:7px,color:#0F172A;
+    classDef edge fill:#FEF3C7,stroke:#D97706,stroke-width:8px,color:#0F172A;
+    classDef tls fill:#DBEAFE,stroke:#2563EB,stroke-width:7px,color:#0F172A;
+    classDef lb fill:#E0F2FE,stroke:#0284C7,stroke-width:7px,color:#0F172A;
+    classDef backendA fill:#EDE9FE,stroke:#7C3AED,stroke-width:7px,color:#0F172A;
+    classDef backendB fill:#FCE7F3,stroke:#DB2777,stroke-width:7px,color:#0F172A;
+    classDef cache fill:#FEF3C7,stroke:#D97706,stroke-width:7px,color:#0F172A;
+
+    class DNS dns;
+    class EDGE edge;
+    class TLS tls;
+    class LB lb;
+    class A backendA;
+    class B backendB;
+    class CACHE cache;
+
+    linkStyle default stroke:#475569,stroke-width:7px;
 ```
 
 ---
