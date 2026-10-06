@@ -1,4 +1,6 @@
 # Private Network Service Platform
+
+> **README source note:** This README is a Mermaid-formatted version of the supplied project markdown. The technical values and terminology are preserved from that source; for final submission, cross-check the network inventory and evidence filenames against the latest team evidence PDFs.
 ## Computer Networks Course Project — Phase 1: Build & Observe
 
 ### Core Principle
@@ -54,76 +56,70 @@ The cluster operates on a private Class A local area subnet (`10.7.0.0/16`). All
 
 ### 4.1 Topology Diagram
 
+```mermaid
+flowchart TB
+    %% High-level private LAN
+    subgraph LAN["PRIVATE LAN — 10.7.0.0/16"]
+        direction TB
+
+        C1["CLIENT NODE<br/>Mac 1 / Mac 4"]
+
+        DNS["MAC 1 — Private DNS Server<br/>Aditya Rana<br/><br/>dnsmasq :53<br/>10.7.9.245"]
+        EDGE["MAC 2 — Edge Reverse Proxy / Load Balancer<br/>Krishna<br/><br/>nginx :8443<br/>10.7.5.53<br/><br/>TLS Termination<br/>Upstream: cn_backends"]
+
+        A["MAC 3 — Backend Server A<br/>Rachit Gupta<br/><br/>HTTP :3001<br/>10.7.22.10<br/><br/>X-Backend: A<br/>ETag: &quot;A-v1&quot;<br/>Cache-Control: max-age=60"]
+
+        B["MAC 4 — Backend Server B<br/>Saumya Mishra<br/><br/>HTTP :3002<br/>10.7.7.25<br/><br/>X-Backend: B<br/>ETag: &quot;B-v1&quot;<br/>Cache-Control: max-age=60"]
+    end
+
+    C1 -->|"1. DNS Query<br/>UDP 53<br/>app.cn-capstone.test"| DNS
+    DNS -->|"2. DNS Response<br/>A = 10.7.5.53"| C1
+
+    C1 -->|"3. TCP 3-way handshake<br/>SYN → SYN-ACK → ACK<br/>TCP 8443"| EDGE
+    C1 -->|"4. TLS 1.2/1.3<br/>ClientHello → ServerHello → Certificate → Finished"| EDGE
+    C1 -->|"5. Encrypted HTTPS<br/>GET /api/status<br/>SNI: app.cn-capstone.test"| EDGE
+
+    EDGE -->|"6a. HTTP/1.1<br/>Round-robin turn"| A
+    EDGE -->|"6b. HTTP/1.1<br/>Round-robin turn"| B
+
+    A -->|"7. Backend response<br/>X-Backend: A"| EDGE
+    B -->|"7. Backend response<br/>X-Backend: B"| EDGE
+
+    EDGE -->|"TLS-encrypted return<br/>HTTP/1.1 200 OK"| C1
 ```
-+---------------------------------------------------------------------------------------+
-|                                    PRIVATE LAN                                        |
-|                                    10.7.0.0/16                                        |
-+---------------------------------------------------------------------------------------+
-            |                                                      |
-            |                                                      |
-    [1] DNS Query (UDP 53)                                  [2] DNS Response
-    "app.cn-capstone.test?"                                  "10.7.5.53"
-            |                                                      |
-            v                                                      |
-+--------------------------+                                       |
-|          MAC 1           | --------------------------------------+
-|       Aditya Rana        |
-|    Private DNS Server    |
-|       (dnsmasq:53)       |
-|        10.7.9.245        |
-+--------------------------+
-            ^
-            |
-    +---------------+
-    |  CLIENT NODE  |
-    | (Mac 1/Mac 4) |
-    +---------------+
-            |
-            | [3] TCP 3-Way Handshake (SYN -> SYN-ACK -> ACK on TCP 8443)
-            | [4] TLS 1.2/1.3 Handshake (ClientHello -> ServerHello -> Cert -> Finished)
-            | [5] Encrypted HTTPS Request: GET /api/status (SNI: app.cn-capstone.test)
-            v
-+---------------------------------------------------------------------------------------+
-|                                        MAC 2                                          |
-|                                       Krishna                                         |
-|                      Edge Reverse Proxy & Round-Robin Load Balancer                   |
-|                                    (nginx:8443)                                       |
-|                                     10.7.5.53                                         |
-|                                                                                       |
-|   TLS Termination Point                                                               |
-|   Upstream Group: cn_backends                                                         |
-|     - 10.7.22.10:3001 (Backend A)                                                     |
-|     - 10.7.7.25:3002  (Backend B)                                                     |
-+---------------------------------------------------------------------------------------+
-                |                                                   |
-                | [6a] HTTP/1.1 Request                             | [6b] HTTP/1.1 Request
-                |      Round-Robin Turn 1                           |      Round-Robin Turn 2
-                v                                                   v
-+-------------------------------+                   +-------------------------------+
-|             MAC 3             |                   |             MAC 4             |
-|          Rachit Gupta         |                   |         Saumya Mishra         |
-|       Backend Server A        |                   |       Backend Server B        |
-|       (HTTP Port 3001)        |                   |       (HTTP Port 3002)        |
-|          10.7.22.10           |                   |          10.7.7.25            |
-|                               |                   |                               |
-| Responds:                     |                   | Responds:                     |
-| - Header: X-Backend: A        |                   | - Header: X-Backend: B        |
-| - Header: ETag: "A-v1"        |                   | - Header: ETag: "B-v1"        |
-| - Cache-Control: max-age=60   |                   | - Cache-Control: max-age=60   |
-| - Body: {"backend":"A",...}   |                   | - Body: {"backend":"B",...}   |
-+-------------------------------+                   +-------------------------------+
-                |                                                   |
-                +-------------------------+-------------------------+
-                                          |
-                                [7] Backend Response
-                                          |
-                                          v
-                              (TLS Encrypted Return)
-                                          |
-                                          v
-                                    [CLIENT NODE]
-                                  HTTP/1.1 200 OK
-                                    X-Backend: A / B
+
+### 4.2 Request Lifecycle — Mermaid Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Client Node<br/>(Mac 1 / Mac 4)
+    participant DNS as Mac 1<br/>dnsmasq :53
+    participant Edge as Mac 2<br/>nginx :8443
+    participant A as Mac 3<br/>Backend A :3001
+    participant B as Mac 4<br/>Backend B :3002
+
+    Client->>DNS: DNS query<br/>app.cn-capstone.test
+    DNS-->>Client: A 10.7.5.53
+
+    Client->>Edge: TCP SYN
+    Edge-->>Client: TCP SYN-ACK
+    Client->>Edge: TCP ACK
+
+    Client->>Edge: TLS ClientHello<br/>SNI = app.cn-capstone.test
+    Edge-->>Client: TLS ServerHello + Certificate + Finished
+
+    Client->>Edge: Encrypted GET /api/status
+
+    alt Round-robin selects Backend A
+        Edge->>A: HTTP/1.1 GET /api/status
+        A-->>Edge: 200 OK + X-Backend: A + ETag
+    else Round-robin selects Backend B
+        Edge->>B: HTTP/1.1 GET /api/status
+        B-->>Edge: 200 OK + X-Backend: B + ETag
+    end
+
+    Edge-->>Client: TLS-encrypted HTTP response
 ```
 
 ### 4.2 Request Lifecycle
