@@ -1,0 +1,44 @@
+* Host app.cn-capstone.test:8443 was resolved.
+* IPv4: 10.7.5.53
+* Trying 10.7.5.53:8443...
+* Connected to app.cn-capstone.test (10.7.5.53) port 8443
+* ALPN: curl offers h2,http/1.1
+* TLS handshake, Client hello
+* TLS handshake, Server hello
+* TLS handshake, Certificate
+* TLS handshake, CERT verify
+* TLS handshake, Finished
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256
+* ALPN: server accepted http/1.1
+
+* Server certificate:
+* subject: C=IN; ST=Haryana; L=Sonipat; O=CN Project; OU=Computer Networks; CN=app.cn-capstone.test
+* subjectAltName: host "app.cn-capstone.test" matched cert's "app.cn-capstone.test"
+* issuer: C=IN; ST=Haryana; L=Sonipat; O=CN Project; OU=Computer Networks; CN=app.cn-capstone.test
+* SSL certificate verify ok.
+
+> GET / HTTP/1.1
+> Host: app.cn-capstone.test:8443
+
+< HTTP/1.1 200 OK
+< Server: nginx/1.31.6
+< Date: Mon, 05 Oct 2026 06:29:01 GMT
+< Content-Type: application/json
+< Content-Length: 57
+< Connection: keep-alive
+< Cache-Control: max-age=60
+< ETag: "B-v1"
+< X-Backend: B
+
+{"backend": "B", "status": "ok", "service": "cn-project"}
+
+---
+
+Command:
+curl -v https://app.cn-capstone.test:8443
+
+TLS validation:
+SUCCESS
+
+-k flag:
+NOT USED

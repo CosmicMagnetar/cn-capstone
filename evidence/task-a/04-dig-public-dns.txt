@@ -1,0 +1,14 @@
+; <<>> DiG 9.10.6 <<>> @8.8.8.8 app.cn-capstone.test
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 29987
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;app.cn-capstone.test.        IN      A
+
+;; AUTHORITY SECTION:
+.			86377	IN	SOA	a.root-servers.net. nstld.verisign-grs.com. 2026100401 1800 900 604800 86400
+
+;; SERVER: 8.8.8.8#53(8.8.8.8)

@@ -132,8 +132,8 @@ Machine: Mac 4 | Member: Saumya Mishra | Bound to: 0.0.0.0:3002
 ### Step 5.2: Configure DNS Resolver on Client Machines
 On Mac 4 (and Mac 2/3 when acting as test clients):
 ```bash
-# Configure system DNS to query Mac 1 (replace 10.7.x.x with Mac 1 IP)
-sudo networksetup -setdnsservers Wi-Fi 10.7.x.x
+# Configure system DNS to query Mac 1 (Aditya Rana: 10.7.9.245)
+sudo networksetup -setdnsservers Wi-Fi 10.7.9.245
 
 # Verify DNS resolution of project domain
 dig app.cn-capstone.test +short

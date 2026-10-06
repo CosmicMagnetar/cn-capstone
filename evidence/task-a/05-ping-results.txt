@@ -1,0 +1,8 @@
+Mac 1 -> Mac 2: 4 packets transmitted, 0 received, 100% packet loss
+Mac 1 -> Mac 3: 4 packets transmitted, 0 received, 100% packet loss
+Mac 1 -> Mac 4: 4 packets transmitted, 4 received, 0% packet loss
+
+Mac 2 -> Mac 3: 4 packets transmitted, 0 received, 100% packet loss
+Mac 2 -> Mac 4: 4 packets transmitted, 4 received, 0% packet loss
+
+Mac 3 -> Mac 4: 4 packets transmitted, 4 received, 0% packet loss

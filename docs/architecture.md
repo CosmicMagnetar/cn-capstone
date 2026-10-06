@@ -19,7 +19,7 @@ The architecture decouples client service discovery, edge security termination, 
 
 | Physical Node | Team Lead | Infrastructure Component | Primary Software | Network Socket | Cloud Architectural Analogy |
 |:---|:---|:---|:---|:---|:---|
-| **Mac 1** | Aditya Rana | Authoritative DNS Resolver | `dnsmasq` | `10.7.x.x:53` (UDP/TCP) | Amazon Route 53 / CoreDNS |
+| **Mac 1** | Aditya Rana | Authoritative DNS Resolver | `dnsmasq` | `10.7.9.245:53` (UDP/TCP) | Amazon Route 53 / CoreDNS |
 | **Mac 2** | Krishna | Edge Reverse Proxy & Load Balancer | `nginx` 1.31.6 + OpenSSL | `10.7.5.53:8443` (TCP/TLS) | AWS Application Load Balancer / CloudFront |
 | **Mac 3** | Rachit Gupta | Application Server Instance A | Python 3 HTTP Server | `10.7.22.10:3001` (TCP) | AWS EC2 / ECS Container A |
 | **Mac 4** | Saumya Mishra | Application Server Instance B | Python 3 HTTP Server | `10.7.7.25:3002` (TCP) | AWS EC2 / ECS Container B |
@@ -86,7 +86,7 @@ The traversal of an application request from issuance to completion spans seven 
 - **Record Mapping**:
   - `app.cn-capstone.test` -> `10.7.5.53` (Mac 2 Edge)
   - `api.cn-capstone.test` -> `10.7.5.53` (Mac 2 Edge)
-- **TTL Configuration**: Set to 30 seconds to support Phase 2 dynamic failover and traffic redirection.
+- **TTL Configuration**: Set to 30 seconds (`local-ttl=30`) for efficient resolver caching.
 
 ### 4.2 Edge Security and TLS Termination
 - **Protocol Support**: TLS 1.2 and TLS 1.3.
@@ -119,8 +119,8 @@ The traversal of an application request from issuance to completion spans seven 
 
 ---
 
-## 5. Security Architecture and Service Isolation
+## 5. Security Architecture & Topology Hiding
 
 1. **Client Confidentiality**: Client requests are encrypted in transit over the local Wi-Fi medium using TLS.
 2. **Topology Hiding**: Upstream IP addresses (`10.7.22.10`, `10.7.7.25`) and application ports (`3001`, `3002`) are never exposed to clients.
-3. **Firewall Isolation (Phase 2)**: Backend instances utilize macOS `pf` packet filtering rules to reject all inbound TCP traffic on ports 3001 and 3002 unless originating from Mac 2 (`10.7.5.53`).
+3. **Restricted Domain Namespace**: Use of the reserved `.test` top-level domain prevents external DNS leakage or macOS Bonjour/mDNS collisions.

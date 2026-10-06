@@ -1,0 +1,3 @@
+Filter: tls
+
+The capture shows a TLS ClientHello from the client to 10.7.5.53:8443 with the SNI app.cn-capstone.test. The server responds with TLS handshake messages including ServerHello, followed by encrypted TLS Application Data. After encryption starts, the HTTP headers and body cannot be read directly in Wireshark because they are carried inside encrypted TLS records.

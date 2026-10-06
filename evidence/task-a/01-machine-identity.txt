@@ -1,0 +1,7 @@
+Mac 1 / DNS server + Client: 10.7.9.245 (en0)
+Mac 2 / Edge nginx + Load Balancer: 10.7.5.53 (en0)
+Mac 3 / Backend A: 10.7.22.10 (en0)
+Mac 4 / Backend B + Client: 10.7.7.25 (en0)
+
+Subnet: 255.255.224.0 (/19)
+Gateway: 10.7.0.1

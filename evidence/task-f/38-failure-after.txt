@@ -1,0 +1,24 @@
+===== AFTER BACKEND A FAILURE =====
+Request 1
+HTTP/1.1 200 OK
+X-Backend: B
+
+Request 2
+HTTP/1.1 200 OK
+X-Backend: B
+
+Request 3
+HTTP/1.1 200 OK
+X-Backend: B
+
+Request 4
+HTTP/1.1 200 OK
+X-Backend: B
+
+Request 5
+HTTP/1.1 200 OK
+X-Backend: B
+
+Request 6
+HTTP/1.1 200 OK
+X-Backend: B

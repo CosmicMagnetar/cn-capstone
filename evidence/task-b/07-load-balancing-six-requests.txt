@@ -1,0 +1,29 @@
+REQUEST 1
+HTTP/1.1 200 OK
+X-Backend: A
+
+REQUEST 2
+HTTP/1.1 200 OK
+X-Backend: B
+
+REQUEST 3
+HTTP/1.1 200 OK
+X-Backend: A
+
+REQUEST 4
+HTTP/1.1 200 OK
+X-Backend: B
+
+REQUEST 5
+HTTP/1.1 200 OK
+X-Backend: A
+
+REQUEST 6
+HTTP/1.1 200 OK
+X-Backend: B
+
+---
+
+Round-robin load balancing is demonstrated because both Backend A and Backend B serve alternating requests.
+Backend A: 10.7.22.10:3001
+Backend B: 10.7.7.25:3002

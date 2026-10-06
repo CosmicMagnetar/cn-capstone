@@ -1,0 +1,16 @@
+Option A — Stop one backend.
+
+Before:
+Backend A (10.7.22.10:3001) and Backend B (10.7.7.25:3002) were running. Requests through the nginx edge returned both X-Backend: A and X-Backend: B.
+
+Action:
+Backend A was stopped on Mac 3.
+
+After:
+Requests continued successfully through Backend B and returned X-Backend: B only.
+
+Affected layer:
+The backend/application layer was affected because Backend A on TCP port 3001 was unavailable. DNS and the nginx edge remained running.
+
+Restoration:
+Backend A was started again on Mac 3. After restoration, requests through the nginx edge again returned both X-Backend: A and X-Backend: B.

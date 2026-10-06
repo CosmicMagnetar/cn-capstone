@@ -23,7 +23,7 @@ The platform operates across four physical macOS nodes connected to a dedicated,
 
 | Machine | Hostname | Hardware Role | Team Member | IPv4 Address | Subnet Mask | Active Interface | Listening Sockets |
 |:---|:---|:---|:---|:---|:---|:---|:---|
-| **Mac 1** | `cn-dns` | Private DNS Server | Aditya Rana | `10.7.x.x` | `255.255.0.0` | `en0` | `53/UDP`, `53/TCP` |
+| **Mac 1** | `cn-dns` | Private DNS Server | Aditya Rana | `10.7.9.245` | `255.255.0.0` | `en0` | `53/UDP`, `53/TCP` |
 | **Mac 2** | `cn-edge` | Edge Proxy / LB | Krishna | `10.7.5.53` | `255.255.0.0` | `en0` | `8443/TCP`, `80/8080/TCP` |
 | **Mac 3** | `cn-backend-a` | App Instance A | Rachit Gupta | `10.7.22.10` | `255.255.0.0` | `en0` | `3001/TCP` |
 | **Mac 4** | `cn-backend-b` | App Instance B | Saumya Mishra | `10.7.7.25` | `255.255.0.0` | `en0` | `3002/TCP` |
@@ -41,7 +41,7 @@ The platform operates across four physical macOS nodes connected to a dedicated,
                  |                    MAC 1                    |
                  |                 Aditya Rana                 |
                  |             Private DNS Server              |
-                 |                 (10.7.x.x)                  |
+                 |                (10.7.9.245)                 |
                  +---------------------------------------------+
                                         |
                  +----------------------+----------------------+
@@ -88,7 +88,7 @@ The platform operates across four physical macOS nodes connected to a dedicated,
 
 | Node | Service | Process Name | Bound Socket | Protocol | Scope | Purpose |
 |:---|:---|:---|:---|:---|:---|:---|
-| **Mac 1** | DNS Daemon | `dnsmasq` | `10.7.x.x:53`, `127.0.0.1:53` | UDP/TCP | LAN Accessible | Resolves `.test` domains for all cluster nodes |
+| **Mac 1** | DNS Daemon | `dnsmasq` | `10.7.9.245:53`, `127.0.0.1:53` | UDP/TCP | LAN Accessible | Resolves `.test` domains for all cluster nodes |
 | **Mac 2** | Reverse Proxy | `nginx: master` | `0.0.0.0:8443` | TCP | LAN Accessible | Terminates TLS and load-balances inbound traffic |
 | **Mac 3** | App Server A | `python3` | `0.0.0.0:3001` | TCP | LAN Accessible | Serves Application REST requests (`X-Backend: A`) |
 | **Mac 4** | App Server B | `python3` | `0.0.0.0:3002` | TCP | LAN Accessible | Serves Application REST requests (`X-Backend: B`) |
@@ -101,7 +101,7 @@ Before IP packets can traverse the LAN, physical MAC addresses are resolved usin
 
 1. **Client to Edge ARP Query**:
    ```
-   Who has 10.7.5.53? Tell 10.7.x.x (Broadcast: ff:ff:ff:ff:ff:ff)
+   Who has 10.7.5.53? Tell 10.7.9.245 (Broadcast: ff:ff:ff:ff:ff:ff)
    ```
 2. **Edge ARP Reply**:
    ```

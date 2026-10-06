@@ -1,0 +1,16 @@
+===== BEFORE FAILURE =====
+Request 3
+HTTP/1.1 200 OK
+X-Backend: A
+
+Request 4
+HTTP/1.1 200 OK
+X-Backend: B
+
+Request 5
+HTTP/1.1 200 OK
+X-Backend: A
+
+Request 6
+HTTP/1.1 200 OK
+X-Backend: B

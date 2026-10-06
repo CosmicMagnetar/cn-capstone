@@ -1,0 +1,19 @@
+; <<>> DiG 9.10.6 <<>> app.cn-capstone.test
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 34303
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+
+;; QUESTION SECTION:
+;app.cn-capstone.test.        IN      A
+
+;; ANSWER SECTION:
+app.cn-capstone.test. 30      IN      A       10.7.5.53
+
+;; Query time: 14 msec
+;; SERVER: 10.7.9.245#53(10.7.9.245)
+;; WHEN: Mon Oct 05 09:45:39 IST 2026
+;; MSG SIZE  rcvd: 65

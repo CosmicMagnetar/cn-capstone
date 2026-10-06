@@ -21,7 +21,7 @@ Always isolate issues starting from the bottom of the protocol stack and progres
 
 | Layer | Diagnostic Question | Command to Run | Expected Healthy Result | If It Fails, Next Action |
 |:---|:---|:---|:---|:---|
-| **L1/L2** | Is Wi-Fi associated and active? | `ifconfig en0 \| grep -E "status\|inet "` | `status: active` and valid `10.7.x.x` IP | Reconnect Wi-Fi; verify DHCP/static IP. |
+| **L1/L2** | Is Wi-Fi associated and active? | `ifconfig en0 \| grep -E "status\|inet "` | `status: active` and valid `10.7.9.245` IP | Reconnect Wi-Fi; verify DHCP/static IP. |
 | **L3** | Can we reach target node over IP? | `ping -c 2 10.7.5.53` | `0.0% packet loss` | Check subnet mask; check ARP table (`arp -a`). |
 | **L7 (DNS)** | Does the domain resolve? | `dig app.cn-capstone.test +short` | `10.7.5.53` | Verify `dnsmasq` running on Mac 1; verify client DNS setting. |
 | **L4** | Is the destination port open? | `nc -zvw3 10.7.5.53 8443` | `Connection to 10.7.5.53 port 8443 [tcp] succeeded!` | Verify process listening (`lsof -i :8443` or `nginx -t`). |

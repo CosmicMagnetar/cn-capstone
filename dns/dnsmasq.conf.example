@@ -11,8 +11,8 @@ bogus-priv
 # Listen only on specified interfaces to prevent conflicts with macOS mDNSResponder
 bind-interfaces
 listen-address=127.0.0.1
-# Replace with Mac 1 LAN IPv4 address (e.g., 10.7.1.10)
-# listen-address=10.7.x.x
+# Mac 1 LAN IPv4 address (Aditya Rana)
+listen-address=10.7.9.245
 
 # Port 53 is standard for DNS (UDP and TCP)
 port=53

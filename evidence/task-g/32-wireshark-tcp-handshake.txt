@@ -1,0 +1,3 @@
+Filter: tcp.port == 8443
+
+The TCP connection starts with a SYN from 10.7.9.245:52166 to 10.7.5.53:8443. The server responds with a SYN-ACK from 10.7.5.53:8443 to 10.7.9.245:52166. The client then sends the final ACK to 10.7.5.53:8443. This three-way handshake establishes a reliable, ordered and connection-oriented TCP connection before TLS communication begins.
