@@ -1,0 +1,21 @@
+adi@Adityas-MacBook-Pro-4 ~ % adi@Adityas-MacBook-Pro-4 ~ % nc -G 3 -vz 10.7.21.149 3001
+nc -G 3 -vz 10.7.21.214 3002
+nc: connectx to 10.7.21.149 port 3001 (tcp) failed: Operation timed out
+nc: connectx to 10.7.21.214 port 3002 (tcp) failed: Operation timed out
+adi@Adityas-MacBook-Pro-4 ~ % nc -G 3 -vz 10.7.21.149 3001
+nc -G 3 -vz 10.7.21.214 3002
+nc: connectx to 10.7.21.149 port 3001 (tcp) failed: Operation timed out
+nc: connectx to 10.7.21.214 port 3002 (tcp) failed: Operation timed out
+adi@Adityas-MacBook-Pro-4 ~ %
+
+
+zsh: command not found: adi@Adityas-MacBook-Pro-4
+nc: connectx to 10.7.21.214 port 3002 (tcp) failed: Operation timed out
+zsh: number expected
+zsh: number expected
+zsh: command not found: adi@Adityas-MacBook-Pro-4
+nc: connectx to 10.7.21.214 port 3002 (tcp) failed: Operation timed out
+zsh: number expected
+zsh: number expected
+zsh: command not found: adi@Adityas-MacBook-Pro-4
+adi@Adityas-MacBook-Pro-4 ~ %

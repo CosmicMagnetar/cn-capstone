@@ -1,0 +1,64 @@
+rachitgupta2@Rachits-MacBook-Pro-4 ~ % ls -l ~/Downloads/server.crt ~/Downloads/server.key
+-rw-r--r--@ 1 rachitgupta2 admin 1440 1 Oct 09:07 /Users/rachitgupta2/Downloads/server.crt
+-rw-------@ 1 rachitgupta2 staff 1704 1 Oct 09:07 /Users/rachitgupta2/Downloads/server.key
+rachitgupta2@Rachits-MacBook-Pro-4 ~ % brew install nginx
+
+CERT_DIR="$(brew --prefix)/etc/nginx/certs"
+mkdir -p "$CERT_DIR"
+
+cp ~/Downloads/server.crt "$CERT_DIR/server.crt"
+cp ~/Downloads/server.key "$CERT_DIR/server.key"
+
+chmod 600 "$CERT_DIR/server.key"
+Warning: nginx 1.31.9 is already installed and up-to-date.
+To reinstall 1.31.9, run:
+brew reinstall nginx
+rachitgupta2@Rachits-MacBook-Pro-4 ~ % cd ~/cn-capstone
+git pull --ff-only
+
+NGINX_CONF="$(brew --prefix)/etc/nginx/nginx.conf"
+
+cp "$NGINX_CONF" ~/nginx-original-backup.conf
+
+cp edge/nginx.conf.example "$NGINX_CONF"
+
+sed -i '' \
+-e 's/10\.7\.22\.10:3001/10.7.21.149:3001/g' \
+-e 's/10\.7\.7\.25:3002/10.7.21.214:3002/g' \
+"$NGINX_CONF"
+Already up to date.
+rachitgupta2@Rachits-MacBook-Pro-4 cn-capstone % nginx -t && brew services restart nginx
+nginx: the configuration file /opt/homebrew/etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /opt/homebrew/etc/nginx/nginx.conf test is successful
+==> Successfully started `nginx` (label: sh.brew.nginx)
+rachitgupta2@Rachits-MacBook-Pro-4 cn-capstone % lsof -nP -iTCP:8443 -sTCP:LISTEN
+COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME
+nginx 87559 rachitgupta2 6u IPv4 0x655ef8cea9bf9f60 0t0 TCP *:8443 (LISTEN)
+nginx 87560 rachitgupta2 6u IPv4 0x655ef8cea9bf9f60 0t0 TCP *:8443 (LISTEN)
+rachitgupta2@Rachits-MacBook-Pro-4 cn-capstone %
+
+krishna.@cn-edge ~ % curl --noproxy '*' --max-time 10 -i \
+
+  --resolve app.cn-capstone.test:8443:10.7.21.149 \
+
+  https://app.cn-capstone.test:8443/api/status
+
+HTTP/1.1 200 OK
+
+Server: nginx/1.31.9
+
+Date: Sun, 22 Nov 2026 16:41:06 GMT
+
+Content-Type: application/json
+
+Content-Length: 32
+
+Connection: keep-alive
+
+Cache-Control: max-age=60
+
+ETag: "A-v1"
+
+X-Backend: A
+
+{"backend": "A", "status": "ok"}%                                                                                                                                                                                    krishna.@cn-edge ~ %

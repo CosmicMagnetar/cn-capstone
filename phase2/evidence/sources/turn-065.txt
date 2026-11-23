@@ -1,0 +1,271 @@
+[22/11/26, 10:24:46 PM] Krishna: krishna.@cn-edge ~ % clear
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+krishna.@cn-edge ~ % "$(brew --prefix)/opt/dnsmasq/sbin/dnsmasq" \
+  --conf-file="$HOME/cn-ttl-cache.conf" \
+  --pid-file="$HOME/cn-ttl-cache.pid"
+
+dig @127.0.0.1 -p 5354 app.cn-capstone.test
+
+; <<>> DiG 9.10.6 <<>> @127.0.0.1 -p 5354 app.cn-capstone.test
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 27878
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;app.cn-capstone.test.		IN	A
+
+;; ANSWER SECTION:
+app.cn-capstone.test.	30	IN	A	10.7.12.238
+
+;; Query time: 21 msec
+;; SERVER: 127.0.0.1#5354(127.0.0.1)
+;; WHEN: Sun Nov 22 22:22:29 IST 2026
+;; MSG SIZE  rcvd: 65
+
+krishna.@cn-edge ~ % echo "===== CACHED ANSWER ====="
+dig @127.0.0.1 -p 5354 app.cn-capstone.test
+
+echo "===== NEW AUTHORITATIVE ANSWER ====="
+dig @10.7.17.8 app.cn-capstone.test
+===== CACHED ANSWER =====
+
+; <<>> DiG 9.10.6 <<>> @127.0.0.1 -p 5354 app.cn-capstone.test
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 28182
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;app.cn-capstone.test.		IN	A
+
+;; ANSWER SECTION:
+app.cn-capstone.test.	1	IN	A	10.7.12.238
+
+;; Query time: 1 msec
+;; SERVER: 127.0.0.1#5354(127.0.0.1)
+;; WHEN: Sun Nov 22 22:22:58 IST 2026
+;; MSG SIZE  rcvd: 65
+
+===== NEW AUTHORITATIVE ANSWER =====
+
+; <<>> DiG 9.10.6 <<>> @10.7.17.8 app.cn-capstone.test
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 42269
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;app.cn-capstone.test.		IN	A
+
+;; ANSWER SECTION:
+app.cn-capstone.test.	30	IN	A	10.7.21.149
+
+;; Query time: 180 msec
+;; SERVER: 10.7.17.8#53(10.7.17.8)
+;; WHEN: Sun Nov 22 22:22:58 IST 2026
+;; MSG SIZE  rcvd: 65
+
+krishna.@cn-edge ~ % dig @127.0.0.1 -p 5354 app.cn-capstone.test
+
+; <<>> DiG 9.10.6 <<>> @127.0.0.1 -p 5354 app.cn-capstone.test
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 8898
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;app.cn-capstone.test.		IN	A
+
+;; ANSWER SECTION:
+app.cn-capstone.test.	30	IN	A	10.7.21.149
+
+;; Query time: 304 msec
+;; SERVER: 127.0.0.1#5354(127.0.0.1)
+;; WHEN: Sun Nov 22 22:24:24 IST 2026
+;; MSG SIZE  rcvd: 65
+
+krishna.@cn-edge ~ % kill "$(cat ~/cn-ttl-cache.pid)"
+
+dig @10.7.17.8 app.cn-capstone.test +short
+dig @10.7.21.214 app.cn-capstone.test +short
+10.7.12.238
+10.7.12.238
+krishna.@cn-edge ~ %
+[22/11/26, 10:24:52 PM] Aditya Rana 504: adi@Adityas-MacBook-Pro-4 ~ % clear
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+adi@Adityas-MacBook-Pro-4 ~ % CONF="$(brew --prefix)/etc/dnsmasq.conf"
+
+sudo sed -i '' \
+  's/10\.7\.12\.238/10.7.21.149/g' "$CONF"
+
+sudo brew services restart dnsmasq
+Stopping ⁠ dnsmasq ⁠... (might take a while)
+==> Successfully stopped ⁠ dnsmasq ⁠ (label: sh.brew.dnsmasq)
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.93/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.93/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+This will require manual removal of these paths using ⁠ sudo rm ⁠ on
+brew upgrade/reinstall/uninstall.
+Root services will run Homebrew-installed software as root by default. Only use
+root services if you trust all users who can write to your Homebrew installation.
+==> Successfully started ⁠ dnsmasq ⁠ (label: sh.brew.dnsmasq)
+adi@Adityas-MacBook-Pro-4 ~ % CONF="$(brew --prefix)/etc/dnsmasq.conf"
+
+sudo sed -i '' \
+  's/10\.7\.21\.149/10.7.12.238/g' "$CONF"
+
+sudo brew services restart dnsmasq
+Stopping ⁠ dnsmasq ⁠... (might take a while)
+==> Successfully stopped ⁠ dnsmasq ⁠ (label: sh.brew.dnsmasq)
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.93/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.93/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+This will require manual removal of these paths using ⁠ sudo rm ⁠ on
+brew upgrade/reinstall/uninstall.
+Root services will run Homebrew-installed software as root by default. Only use
+root services if you trust all users who can write to your Homebrew installation.
+==> Successfully started ⁠ dnsmasq ⁠ (label: sh.brew.dnsmasq)
+adi@Adityas-MacBook-Pro-4 ~ %

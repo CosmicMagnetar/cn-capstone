@@ -1,0 +1,301 @@
+[22/11/26, 9:30:31 PM] Saumya Mishra Viksit Nst: saumyamishra@Saumyas-MacBook-Pro-3 ~ % clear
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+saumyamishra@Saumyas-MacBook-Pro-3 ~ % curl --noproxy '*' --max-time 8 -v \
+  --resolve app.cn-capstone.test:8443:10.7.12.238 \
+  https://app.cn-capstone.test:8443/api/status
+•⁠  ⁠Added app.cn-capstone.test:8443:10.7.12.238 to DNS cache
+•⁠  ⁠Hostname app.cn-capstone.test was found in DNS cache
+*   Trying 10.7.12.238:8443...
+•⁠  ⁠Connected to app.cn-capstone.test (10.7.12.238) port 8443
+•⁠  ⁠ALPN: curl offers h2,http/1.1
+•⁠  ⁠(304) (OUT), TLS handshake, Client hello (1):
+*  CAfile: /etc/ssl/cert.pem
+*  CApath: none
+•⁠  ⁠(304) (IN), TLS handshake, Server hello (2):
+•⁠  ⁠(304) (IN), TLS handshake, Unknown (8):
+•⁠  ⁠(304) (IN), TLS handshake, Certificate (11):
+•⁠  ⁠(304) (IN), TLS handshake, CERT verify (15):
+•⁠  ⁠(304) (IN), TLS handshake, Finished (20):
+•⁠  ⁠(304) (OUT), TLS handshake, Finished (20):
+•⁠  ⁠SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256 / [blank] / UNDEF
+•⁠  ⁠ALPN: server accepted http/1.1
+•⁠  ⁠Server certificate:
+*  subject: C=IN; ST=Haryana; L=Sonipat; O=CN Project; OU=Computer Networks; CN=app.cn-capstone.test
+*  start date: Oct  1 03:37:55 2026 GMT
+*  expire date: Oct  1 03:37:55 2027 GMT
+*  subjectAltName: host "app.cn-capstone.test" matched cert's "app.cn-capstone.test"
+*  issuer: C=IN; ST=Haryana; L=Sonipat; O=CN Project; OU=Computer Networks; CN=app.cn-capstone.test
+*  SSL certificate verify ok.
+•⁠  ⁠using HTTP/1.x
+	⁠GET /api/status HTTP/1.1
+	⁠Host: app.cn-capstone.test:8443
+	⁠User-Agent: curl/8.7.1
+	⁠Accept: /
+> 
+•⁠  ⁠Request completely sent off
+< HTTP/1.1 200 OK
+< Server: nginx/1.31.6
+< Date: Sun, 22 Nov 2026 15:58:45 GMT
+< Content-Type: application/json
+< Content-Length: 32
+< Connection: keep-alive
+< Cache-Control: max-age=60
+< ETag: "A-v1"
+< X-Backend: A
+< 
+•⁠  ⁠Connection #0 to host app.cn-capstone.test left intact
+{"backend": "A", "status": "ok"}%                                                                                                                                                                                                                          saumyamishra@Saumyas-MacBook-Pro-3 ~ % echo "===== SYSTEM DNS ====="
+scutil --dns | grep -A 8 'resolver #'
+
+echo "===== MACOS NAME RESOLUTION ====="
+dscacheutil -q host -a name app.cn-capstone.test
+
+echo "===== PROXY SETTINGS ====="
+scutil --proxy
+
+echo "===== CURL VERSION ====="
+curl --version | head -3
+===== SYSTEM DNS =====
+resolver #1
+  nameserver[0] : 10.7.17.8
+  nameserver[1] : 10.7.21.214
+  flags    : Request A records
+  reach    : 0x00020002 (Reachable,Directly Reachable Address)
+
+resolver #2
+  domain   : local
+  options  : mdns
+  timeout  : 5
+  flags    : Request A records
+  reach    : 0x00000000 (Not Reachable)
+  order    : 300000
+
+resolver #3
+  domain   : 254.169.in-addr.arpa
+  options  : mdns
+  timeout  : 5
+  flags    : Request A records
+  reach    : 0x00000000 (Not Reachable)
+  order    : 300200
+
+resolver #4
+  domain   : 8.e.f.ip6.arpa
+  options  : mdns
+  timeout  : 5
+  flags    : Request A records
+  reach    : 0x00000000 (Not Reachable)
+  order    : 300400
+
+resolver #5
+  domain   : 9.e.f.ip6.arpa
+  options  : mdns
+  timeout  : 5
+  flags    : Request A records
+  reach    : 0x00000000 (Not Reachable)
+  order    : 300600
+
+resolver #6
+  domain   : a.e.f.ip6.arpa
+  options  : mdns
+  timeout  : 5
+  flags    : Request A records
+  reach    : 0x00000000 (Not Reachable)
+  order    : 300800
+
+resolver #7
+  domain   : b.e.f.ip6.arpa
+  options  : mdns
+  timeout  : 5
+  flags    : Request A records
+  reach    : 0x00000000 (Not Reachable)
+  order    : 301000
+
+resolver #8
+  domain   : cn-capstone.test
+  nameserver[0] : 10.7.9.245
+  flags    : Request A records
+  reach    : 0x00020002 (Reachable,Directly Reachable Address)
+
+DNS configuration (for scoped queries)
+
+resolver #1
+  nameserver[0] : 10.7.17.8
+  nameserver[1] : 10.7.21.214
+  if_index : 11 (en0)
+  flags    : Scoped, Request A records
+  reach    : 0x00020002 (Reachable,Directly Reachable Address)
+===== MACOS NAME RESOLUTION =====
+===== PROXY SETTINGS =====
+<dictionary> {
+  ExceptionsList : <array> {
+    0 : *.local
+    1 : 169.254/16
+  }
+  FTPPassive : 1
+}
+===== CURL VERSION =====
+curl 8.7.1 (x86_64-apple-darwin26.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.69.0
+Release-Date: 2024-03-27
+Protocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp
+saumyamishra@Saumyas-MacBook-Pro-3 ~ %
+[22/11/26, 9:30:42 PM] Aditya Rana 504: adi@Adityas-MacBook-Pro-4 ~ % clear
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+adi@Adityas-MacBook-Pro-4 ~ % networksetup -getdnsservers "Wi-Fi" > ~/cn-original-dns.txt
+adi@Adityas-MacBook-Pro-4 ~ % sudo networksetup -setdnsservers "Wi-Fi" \
+  10.7.17.8 10.7.21.214
+Password:
+adi@Adityas-MacBook-Pro-4 ~ % sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+adi@Adityas-MacBook-Pro-4 ~ % networksetup -getdnsservers "Wi-Fi"
+10.7.17.8
+10.7.21.214
+adi@Adityas-MacBook-Pro-4 ~ % sudo brew services stop dnsmasq
+Stopping ⁠ dnsmasq ⁠... (might take a while)
+==> Successfully stopped ⁠ dnsmasq ⁠ (label: sh.brew.dnsmasq)
+adi@Adityas-MacBook-Pro-4 ~ % sudo brew services start dnsmasq
+Warning: Taking root:admin ownership of some dnsmasq paths:
+  /opt/homebrew/Cellar/dnsmasq/2.93/sbin
+  /opt/homebrew/Cellar/dnsmasq/2.93/sbin/dnsmasq
+  /opt/homebrew/opt/dnsmasq
+  /opt/homebrew/opt/dnsmasq/sbin
+  /opt/homebrew/var/homebrew/linked/dnsmasq
+This will require manual removal of these paths using ⁠ sudo rm ⁠ on
+brew upgrade/reinstall/uninstall.
+Root services will run Homebrew-installed software as root by default. Only use
+root services if you trust all users who can write to your Homebrew installation.
+==> Successfully started ⁠ dnsmasq ⁠ (label: sh.brew.dnsmasq)
+adi@Adityas-MacBook-Pro-4 ~ %

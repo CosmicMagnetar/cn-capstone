@@ -1,0 +1,118 @@
+[22/11/26, 9:46:16 PM] Rachit Nst: rachitgupta2@Rachits-MacBook-Pro-4 ~ % cat > ~/cn-backend-firewall.conf <<'EOF'
+pass in quick on en0 inet proto tcp from 10.7.12.238 to 10.7.21.149 port 3001
+block drop in quick on en0 inet proto tcp from any to 10.7.21.149 port 3001
+EOF
+
+sudo pfctl -nf ~/cn-backend-firewall.conf
+pfctl: Use of -f option, could result in flushing of rules
+present in the main ruleset added by the system at startup.
+See /etc/pf.conf for further details.
+
+rachitgupta2@Rachits-MacBook-Pro-4 ~ % sudo pfctl -a com.apple/cncapstone \
+  -f ~/cn-backend-firewall.conf
+
+sudo pfctl -a com.apple/cncapstone -sr
+
+sudo pfctl -E | tee ~/cn-pf-enable.txt
+
+sudo pfctl -s info | head -4
+pfctl: Use of -f option, could result in flushing of rules
+present in the main ruleset added by the system at startup.
+See /etc/pf.conf for further details.
+
+No ALTQ support in kernel
+ALTQ related functions disabled
+No ALTQ support in kernel
+ALTQ related functions disabled
+pass in quick on en0 inet proto tcp from 10.7.12.238 to 10.7.21.149 port = 3001 flags S/SA keep state
+block drop in quick on en0 inet proto tcp from any to 10.7.21.149 port = 3001
+No ALTQ support in kernel
+ALTQ related functions disabled
+pf enabled
+Token : 874948265542399015
+No ALTQ support in kernel
+ALTQ related functions disabled
+Status: Enabled for 0 days 00:00:00           Debug: Urgent
+
+State Table                          Total             Rate
+  current entries                        0               
+rachitgupta2@Rachits-MacBook-Pro-4 ~ %
+[22/11/26, 9:46:33 PM] Saumya Mishra Viksit Nst: saumyamishra@Saumyas-MacBook-Pro-3 ~ % cat > ~/cn-backend-firewall.conf <<'EOF'
+pass in quick on en0 inet proto tcp from 10.7.12.238 to 10.7.21.214 port 3002
+pass in quick on en0 inet proto tcp from 10.7.21.149 to 10.7.21.214 port 3002
+block drop in quick on en0 inet proto tcp from any to 10.7.21.214 port 3002
+EOF
+
+sudo pfctl -nf ~/cn-backend-firewall.conf
+pfctl: Use of -f option, could result in flushing of rules
+present in the main ruleset added by the system at startup.
+See /etc/pf.conf for further details.
+
+saumyamishra@Saumyas-MacBook-Pro-3 ~ % sudo pfctl -a com.apple/cncapstone \
+  -f ~/cn-backend-firewall.conf
+
+sudo pfctl -a com.apple/cncapstone -sr
+
+sudo pfctl -E | tee ~/cn-pf-enable.txt
+
+sudo pfctl -s info | head -4
+pfctl: Use of -f option, could result in flushing of rules
+present in the main ruleset added by the system at startup.
+See /etc/pf.conf for further details.
+
+No ALTQ support in kernel
+ALTQ related functions disabled
+No ALTQ support in kernel
+ALTQ related functions disabled
+pass in quick on en0 inet proto tcp from 10.7.12.238 to 10.7.21.214 port = 3002 flags S/SA keep state
+pass in quick on en0 inet proto tcp from 10.7.21.149 to 10.7.21.214 port = 3002 flags S/SA keep state
+block drop in quick on en0 inet proto tcp from any to 10.7.21.214 port = 3002
+No ALTQ support in kernel
+ALTQ related functions disabled
+pf enabled
+Token : 16787022784091126278
+No ALTQ support in kernel
+ALTQ related functions disabled
+Status: Enabled for 0 days 00:00:00           Debug: Urgent
+
+State Table                          Total             Rate
+  current entries                        0               
+saumyamishra@Saumyas-MacBook-Pro-3 ~ %
+[22/11/26, 9:46:53 PM] Krishna: krishna.@cn-edge ~ % curl --noproxy '*' -i --max-time 5 \
+  http://10.7.21.149:3001/api/status
+
+curl --noproxy '*' -i --max-time 5 \
+  http://10.7.21.214:3002/api/status
+HTTP/1.0 200 OK
+Server: BackendServer-A/1.0 Python/3.14.2
+Date: Sun, 22 Nov 2026 16:15:01 GMT
+Content-Type: application/json
+Content-Length: 32
+Connection: keep-alive
+Cache-Control: max-age=60
+ETag: "A-v1"
+X-Backend: A
+
+{"backend": "A", "status": "ok"}HTTP/1.0 200 OK
+Server: BackendServer-B/1.0 Python/3.15.1
+Date: Sun, 22 Nov 2026 16:15:01 GMT
+Content-Type: application/json
+Content-Length: 32
+Connection: keep-alive
+Cache-Control: max-age=60
+ETag: "B-v1"
+X-Backend: B
+
+{"backend": "B", "status": "ok"}%                                                                                                                                                                                    krishna.@cn-edge ~ % curl --noproxy '*' -i --max-time 10 \
+  https://app.cn-capstone.test:8443/api/status
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Sun, 22 Nov 2026 16:15:32 GMT
+Content-Type: application/json
+Content-Length: 32
+Connection: keep-alive
+Cache-Control: max-age=60
+ETag: "A-v1"
+X-Backend: A
+
+{"backend": "A", "status": "ok"}%                                                                                                                                                                                    krishna.@cn-edge ~ %

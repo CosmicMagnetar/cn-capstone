@@ -1,0 +1,25 @@
+krishna.@cn-edge ~ % echo "===== PRIMARY ====="
+dig @10.7.17.8 app.cn-capstone.test +short
+
+echo "===== BACKUP ====="
+dig @10.7.21.214 app.cn-capstone.test +short
+
+echo "===== HTTPS ====="
+curl --noproxy '*' --max-time 10 -i \
+  https://app.cn-capstone.test:8443/api/status
+===== PRIMARY =====
+10.7.12.238
+===== BACKUP =====
+10.7.12.238
+===== HTTPS =====
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Sun, 22 Nov 2026 16:47:07 GMT
+Content-Type: application/json
+Content-Length: 32
+Connection: keep-alive
+Cache-Control: max-age=60
+ETag: "B-v1"
+X-Backend: B
+
+{"backend": "B", "status": "ok"}%                                                                                                                                                                                    krishna.@cn-edge ~ %

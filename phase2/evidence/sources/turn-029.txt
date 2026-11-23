@@ -1,0 +1,45 @@
+saumyamishra@Saumyas-MacBook-Pro-3 ~ % echo "===== OLD RESOLVER FILE ====="
+ls -la /etc/resolver/
+
+echo "===== PROJECT RESOLVER ====="
+cat /etc/resolver/cn-capstone.test
+===== OLD RESOLVER FILE =====
+total 8
+drwxr-xr-x   3 root  wheel    96  1 Oct 15:08 .
+drwxr-xr-x  78 root  wheel  2496 21 Nov 13:04 ..
+-rw-r--r--   1 root  wheel    22  1 Oct 15:08 cn-capstone.test
+===== PROJECT RESOLVER =====
+nameserver 10.7.9.245
+saumyamishra@Saumyas-MacBook-Pro-3 ~ % sudo cp /etc/resolver/cn-capstone.test \
+  ~/cn-phase1-resolver-backup
+
+sudo tee /etc/resolver/cn-capstone.test >/dev/null <<'EOF'
+nameserver 10.7.17.8
+nameserver 10.7.21.214
+EOF
+
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+Password:
+saumyamishra@Saumyas-MacBook-Pro-3 ~ % echo "===== SYSTEM RESOLUTION ====="
+dscacheutil -q host -a name app.cn-capstone.test
+
+echo "===== HTTPS ====="
+curl --noproxy '*' --max-time 15 -i \
+  https://app.cn-capstone.test:8443/api/status
+===== SYSTEM RESOLUTION =====
+name: app.cn-capstone.test
+ip_address: 10.7.12.238
+
+===== HTTPS =====
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Sun, 22 Nov 2026 16:03:44 GMT
+Content-Type: application/json
+Content-Length: 32
+Connection: keep-alive
+Cache-Control: max-age=60
+ETag: "A-v1"
+X-Backend: A
+
+{"backend": "A", "status": "ok"}%                                                                                                                                                                                                                          saumyamishra@Saumyas-MacBook-Pro-3 ~ %

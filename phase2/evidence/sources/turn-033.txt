@@ -1,0 +1,49 @@
+krishna.@cn-edge ~ % for i in {1..6}; do
+
+  echo "===== REQUEST $i ====="
+
+  curl --noproxy '*' --max-time 10 -sS -D - -o /dev/null \
+
+    https://app.cn-capstone.test:8443/api/status \
+
+    | grep -Ei '^HTTP/|^X-Backend:'
+
+done
+
+===== REQUEST 1 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 2 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 3 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 4 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 5 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 6 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+krishna.@cn-edge ~ %

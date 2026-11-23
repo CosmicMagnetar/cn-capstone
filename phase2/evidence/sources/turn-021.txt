@@ -1,0 +1,77 @@
+krishna.@cn-edge ~ % NGINX_CONF="$(brew --prefix)/etc/nginx/nginx.conf"
+
+sed -i '' \
+
+  -e 's/10\.7\.22\.10:3001/10.7.21.149:3001/g' \
+
+  -e 's/10\.7\.7\.25:3002/10.7.21.214:3002/g' \
+
+  "$NGINX_CONF"
+
+nginx -T 2>&1 | grep -A 4 'upstream'
+
+    upstream backend_pool {
+
+        server 10.7.21.149:3001;
+
+        server 10.7.21.214:3002;
+
+    }
+
+krishna.@cn-edge ~ % nginx -t && nginx -s reload
+
+nginx: the configuration file /opt/homebrew/etc/nginx/nginx.conf syntax is ok
+
+nginx: configuration file /opt/homebrew/etc/nginx/nginx.conf test is successful
+
+krishna.@cn-edge ~ % for i in {1..6}; do
+
+  echo "===== REQUEST $i ====="
+
+  curl --max-time 5 -sS -D - -o /dev/null \
+
+    --resolve app.cn-capstone.test:8443:10.7.12.238 \
+
+    https://app.cn-capstone.test:8443/api/status \
+
+    | grep -Ei '^HTTP/|^X-Backend:'
+
+done
+
+===== REQUEST 1 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: A
+
+===== REQUEST 2 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 3 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: A
+
+===== REQUEST 4 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+===== REQUEST 5 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: A
+
+===== REQUEST 6 =====
+
+HTTP/1.1 200 OK
+
+X-Backend: B
+
+krishna.@cn-edge ~ %

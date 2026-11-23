@@ -1,5 +1,7 @@
 # Private Network Service Platform
 
+For the Phase 2 design, report, evidence status, and live demonstration guide, start at [phase2/README.md](phase2/README.md). This README records the Phase 1 build and its earlier IP addresses.
+
 ## Computer Networks Course Project — Phase 1: Build & Observe
 
 > **Core Principle:**  
